@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Audio ML Test</title>
+  <style>
+    body { font-family: system-ui; max-width: 700px; margin: 2em auto; }
+    button { padding: 6px 14px; margin: 4px; cursor: pointer; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .class-box { border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin: 8px 0; }
+    .class-box h3 { margin: 0 0 6px; }
+    #log { white-space: pre-wrap; background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 13px; max-height: 300px; overflow-y: auto; }
+    .bar { height: 18px; background: #4a9; border-radius: 3px; transition: width 0.15s; margin: 2px 0; }
+    .bar-label { font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Audio ML Test</h1>
+  <p>Record samples for 2+ classes, train, then predict live.</p>
+
+  <div>
+    <input id="className" placeholder="Class name" value="">
+    <button onclick="addClass()">Add class</button>
+  </div>
+  <div id="classes"></div>
+
+  <hr>
+  <button id="trainBtn" onclick="train()" disabled>Train model</button>
+  <button id="predictBtn" onclick="togglePredict()" disabled>Start predicting</button>
+  <div id="results"></div>
+  <hr>
+  <div id="log"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script>
+    // --- Config ---
+    const SAMPLE_RATE = 8000;
+    const DURATION_MS = 990;
+    const NUM_EPOCHS = 160;
+    const LEARNING_RATE = 0.1;
+
+    const audioDataWindow = {
+      duration: DURATION_MS,
+      minSamples: Math.floor((SAMPLE_RATE * DURATION_MS) / 1000),
+      deviceSamplesPeriod: Math.round(1000 / SAMPLE_RATE),
+      deviceSamplesLength: SAMPLE_RATE,
+    };
+
+    // --- State ---
+    let classes = []; // [{name, recordings: [XYZData]}]
+    let model = null;
+    let predicting = false;
+    let predictInterval = null;
+
+    // --- Logging ---
+    function log(msg) {
+      const el = document.getElementById("log");
+      el.textContent += msg + "\n";
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // --- Biquad filters ---
+    function applyBiquad(samples, c) {
+      const out = new Array(samples.length);
+      let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+      for (let i = 0; i < samples.length; i++) {
+        const x0 = samples[i];
+        out[i] = (c.b0 * x0 + c.b1 * x1 + c.b2 * x2 - c.a1 * y1 - c.a2 * y2) / c.a0;
+        x2 = x1; x1 = x0; y2 = y1; y1 = out[i];
+      }
+      return out;
+    }
+
+    function lowPassCoeffs(cutoff, sr) {
+      const w0 = (2 * Math.PI * cutoff) / sr;
+      const alpha = Math.sin(w0) / (2 * Math.SQRT2);
+      const cosW0 = Math.cos(w0);
+      return { b0: (1 - cosW0) / 2, b1: 1 - cosW0, b2: (1 - cosW0) / 2, a0: 1 + alpha, a1: -2 * cosW0, a2: 1 - alpha };
+    }
+
+    function highPassCoeffs(cutoff, sr) {
+      const w0 = (2 * Math.PI * cutoff) / sr;
+      const alpha = Math.sin(w0) / (2 * Math.SQRT2);
+      const cosW0 = Math.cos(w0);
+      return { b0: (1 + cosW0) / 2, b1: -(1 + cosW0), b2: (1 + cosW0) / 2, a0: 1 + alpha, a1: -2 * cosW0, a2: 1 - alpha };
+    }
+
+    function splitAudioToXYZ(samples) {
+      const low = applyBiquad(samples, lowPassCoeffs(300, SAMPLE_RATE));
+      const high = applyBiquad(samples, highPassCoeffs(2000, SAMPLE_RATE));
+      const mid = samples.map((s, i) => s - low[i] - high[i]);
+      return { x: low, y: mid, z: high };
+    }
+
+    // --- Feature extraction (same filters as mlConfig.ts) ---
+    const _mean = (d) => d.reduce((a, b) => a + b, 0) / d.length;
+    const _std = (d) => Math.sqrt(d.reduce((a, b) => a + Math.pow(b - _mean(d), 2), 0) / d.length);
+    const _rms = (d) => Math.sqrt(d.reduce((a, b) => a + b * b, 0) / d.length);
+
+    function _peaks(data) {
+      const lag = 5, threshold = 3.5, influence = 0.5;
+      if (data.length < lag + 2) return 0;
+      let count = 0;
+      const signals = new Array(data.length).fill(0);
+      const filteredY = data.slice(0);
+      const leadIn = data.slice(0, lag);
+      const avgF = [], stdF = [];
+      avgF[lag - 1] = _mean(leadIn);
+      stdF[lag - 1] = _std(leadIn);
+      for (let i = lag; i < data.length; i++) {
+        if (Math.abs(data[i] - avgF[i - 1]) > 0.1 && Math.abs(data[i] - avgF[i - 1]) > threshold * stdF[i - 1]) {
+          if (data[i] > avgF[i - 1]) { signals[i] = 1; if (i > 0 && signals[i - 1] === 0) count++; }
+          else { signals[i] = -1; }
+          filteredY[i] = influence * data[i] + (1 - influence) * filteredY[i - 1];
+        } else { signals[i] = 0; filteredY[i] = data[i]; }
+        const yLag = filteredY.slice(i - lag, i);
+        avgF[i] = _mean(yLag);
+        stdF[i] = _std(yLag);
+      }
+      return count;
+    }
+
+    function _zcr(d) {
+      let c = 0;
+      for (let i = 1; i < d.length; i++) if ((d[i] >= 0) !== (d[i - 1] >= 0)) c++;
+      return c / (d.length - 1);
+    }
+
+    function _acc(d) {
+      return (d.reduce((a, b) => a + Math.abs(b), 0) / d.length) * audioDataWindow.deviceSamplesLength;
+    }
+
+    const filterFns = [
+      (d) => Math.max(...d),
+      (d) => Math.min(...d),
+      _mean, _std, _peaks, _acc, _zcr, _rms,
+    ];
+
+    function applyFilters(xyz) {
+      const features = [];
+      for (const fn of filterFns) {
+        features.push(fn(xyz.x), fn(xyz.y), fn(xyz.z));
+      }
+      return features;
+    }
+
+    // --- Mic recording ---
+    async function recordClip() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+      const actualRate = audioCtx.sampleRate; // capture before close
+      const source = audioCtx.createMediaStreamSource(stream);
+      const bufferSize = 4096;
+      const processor = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+      const samples = [];
+
+      return new Promise((resolve, reject) => {
+        processor.onaudioprocess = (e) => {
+          const data = e.inputBuffer.getChannelData(0);
+          for (let i = 0; i < data.length; i++) samples.push(data[i]);
+        };
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+
+        setTimeout(() => {
+          processor.disconnect();
+          source.disconnect();
+          stream.getTracks().forEach((t) => t.stop());
+          audioCtx.close();
+          // If browser didn't honor our sample rate, downsample
+          let result = samples;
+          if (actualRate !== SAMPLE_RATE) {
+            const ratio = actualRate / SAMPLE_RATE;
+            result = [];
+            for (let i = 0; i < samples.length; i += ratio) {
+              result.push(samples[Math.floor(i)]);
+            }
+          }
+          // Trim to expected length
+          const expected = Math.floor((SAMPLE_RATE * DURATION_MS) / 1000);
+          const clip = result.slice(0, expected);
+          if (clip.length < expected / 2) {
+            reject(new Error(`Only got ${clip.length}/${expected} samples — mic may not be ready. Try again.`));
+          } else {
+            resolve(clip);
+          }
+        }, DURATION_MS + 200); // margin for mic startup
+      });
+    }
+
+    // --- UI ---
+    function addClass() {
+      const input = document.getElementById("className");
+      const name = input.value.trim();
+      if (!name) return;
+      classes.push({ name, recordings: [] });
+      input.value = "";
+      renderClasses();
+    }
+
+    function renderClasses() {
+      const container = document.getElementById("classes");
+      container.innerHTML = "";
+      classes.forEach((cls, i) => {
+        const div = document.createElement("div");
+        div.className = "class-box";
+        div.innerHTML = `<h3>${cls.name}</h3><span>${cls.recordings.length} recording(s)</span> <button onclick="record(${i})">Record 1s</button>`;
+        container.appendChild(div);
+      });
+      document.getElementById("trainBtn").disabled = classes.length < 2 || classes.some((c) => c.recordings.length < 1);
+    }
+
+    async function record(classIndex) {
+      log(`Recording "${classes[classIndex].name}"...`);
+      try {
+        const samples = await recordClip();
+        const xyz = splitAudioToXYZ(samples);
+        classes[classIndex].recordings.push(xyz);
+        log(`  Got ${samples.length} samples → features: [${applyFilters(xyz).map((v) => v.toFixed(2)).join(", ")}]`);
+        renderClasses();
+      } catch (e) {
+        log(`  ✗ ${e.message}`);
+      }
+    }
+
+    // --- Training ---
+    async function train() {
+      document.getElementById("trainBtn").disabled = true;
+      log("Training...");
+
+      const features = [];
+      const labels = [];
+      const numClasses = classes.length;
+
+      classes.forEach((cls, ci) => {
+        cls.recordings.forEach((xyz) => {
+          features.push(applyFilters(xyz));
+          const label = new Array(numClasses).fill(0);
+          label[ci] = 1;
+          labels.push(label);
+        });
+      });
+
+      const inputShape = [features[0].length];
+      const input = tf.input({ shape: inputShape });
+      const norm = tf.layers.batchNormalization().apply(input);
+      const dense = tf.layers.dense({ units: 16, activation: "relu" }).apply(norm);
+      const out = tf.layers.dense({ units: numClasses, activation: "softmax" }).apply(dense);
+      model = tf.model({ inputs: input, outputs: out });
+      model.compile({ loss: "categoricalCrossentropy", optimizer: tf.train.sgd(LEARNING_RATE), metrics: ["accuracy"] });
+
+      await model.fit(tf.tensor(features), tf.tensor(labels), {
+        epochs: NUM_EPOCHS,
+        batchSize: 16,
+        shuffle: true,
+        callbacks: { onEpochEnd: (e, l) => { if (e % 20 === 0) log(`  epoch ${e}: loss=${l.loss.toFixed(4)} acc=${l.acc.toFixed(4)}`); } },
+      });
+
+      log("Training complete!");
+      document.getElementById("trainBtn").disabled = false;
+      document.getElementById("predictBtn").disabled = false;
+    }
+
+    // --- Live prediction ---
+    function togglePredict() {
+      if (predicting) { stopPredict(); return; }
+      predicting = true;
+      document.getElementById("predictBtn").textContent = "Stop predicting";
+      startPredict();
+    }
+
+    async function startPredict() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+      const source = audioCtx.createMediaStreamSource(stream);
+      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      const ring = [];
+      const maxLen = Math.floor((SAMPLE_RATE * DURATION_MS) / 1000);
+
+      processor.onaudioprocess = (e) => {
+        const data = e.inputBuffer.getChannelData(0);
+        const actualRate = audioCtx.sampleRate || SAMPLE_RATE;
+        const ratio = actualRate / SAMPLE_RATE;
+        for (let i = 0; i < data.length; i += ratio) ring.push(data[Math.floor(i)]);
+        while (ring.length > maxLen * 2) ring.shift();
+      };
+      source.connect(processor);
+      processor.connect(audioCtx.destination);
+
+      predictInterval = setInterval(() => {
+        if (ring.length < maxLen) return;
+        const samples = ring.slice(-maxLen);
+        const xyz = splitAudioToXYZ(samples);
+        const input = applyFilters(xyz);
+        const pred = model.predict(tf.tensor([input]));
+        const confidences = pred.dataSync();
+        renderResults(confidences);
+      }, 50);
+
+      // Store cleanup refs
+      window._predictCleanup = () => {
+        clearInterval(predictInterval);
+        processor.disconnect();
+        source.disconnect();
+        stream.getTracks().forEach((t) => t.stop());
+        audioCtx.close();
+      };
+    }
+
+    function stopPredict() {
+      predicting = false;
+      document.getElementById("predictBtn").textContent = "Start predicting";
+      if (window._predictCleanup) window._predictCleanup();
+    }
+
+    function renderResults(confidences) {
+      const container = document.getElementById("results");
+      container.innerHTML = "";
+      classes.forEach((cls, i) => {
+        const pct = (confidences[i] * 100).toFixed(1);
+        container.innerHTML += `<div class="bar-label">${cls.name}: ${pct}%</div><div class="bar" style="width:${pct}%"></div>`;
+      });
+    }
+  </script>
+</body>
+</html>
