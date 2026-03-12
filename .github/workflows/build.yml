@@ -1,8 +1,6 @@
 name: build
 
 on:
-  release:
-    types: [created]
   push:
     branches:
       - "**"
@@ -18,16 +16,6 @@ jobs:
     permissions:
       contents: read
       packages: read
-    env:
-      AWS_DEFAULT_REGION: eu-west-1
-      PRODUCTION_CLOUDFRONT_DISTRIBUTION_ID: EDKYRQ3JZCXQ5
-      # As per production because beta stage is served from there
-      BETA_CLOUDFRONT_DISTRIBUTION_ID: EDKYRQ3JZCXQ5
-      STAGING_CLOUDFRONT_DISTRIBUTION_ID: E37K3V5Y65XQIX
-      REVIEW_CLOUDFRONT_DISTRIBUTION_ID: E3KUGPF02I4CJ4
-      VITE_FOUNDATION_BUILD: ${{ github.repository_owner == 'microbit-foundation' }}
-      # Not really secret but worth keeping out the repo to prevent unintended use
-      VITE_SENTRY_DSN: ${{ secrets.PROTOTYPE_SENTRY_DSN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -36,34 +24,19 @@ jobs:
           cache: "npm"
           registry-url: "https://npm.pkg.github.com"
       - uses: microbit-foundation/npm-package-versioner-action@v1
+      - run: node ./bin/print-ci-env.cjs >> $GITHUB_ENV
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: npm install --no-save @microbit-foundation/ml-trainer-microbit@0.2.0-dev.78 @microbit-foundation/website-deploy-aws@0.6 @microbit-foundation/website-deploy-aws-config@0.10
-        if: github.repository_owner == 'microbit-foundation'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: node ./bin/print-ci-env.cjs >> $GITHUB_ENV
       - run: npm run ci
       - name: Run Playwright tests
-        if: env.STAGE == 'REVIEW' || env.STAGE == 'STAGING' || env.STAGE == 'BETA'
         uses: docker://mcr.microsoft.com/playwright:v1.45.0-jammy
         with:
           args: npx playwright test
       - name: Store reports
-        if: (env.STAGE == 'REVIEW' || env.STAGE == 'STAGING' || env.STAGE == 'BETA') && failure()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 3
-      - run: npx website-deploy-aws
-        if: github.repository_owner == 'microbit-foundation' && (env.STAGE == 'REVIEW' || success())
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.WEB_DEPLOY_ML_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.WEB_DEPLOY_ML_AWS_SECRET_ACCESS_KEY }}
-      - run: npx invalidate-cloudfront-distribution
-        if: github.repository_owner == 'microbit-foundation' && (env.STAGE == 'REVIEW' || success())
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.WEB_DEPLOY_ML_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.WEB_DEPLOY_ML_AWS_SECRET_ACCESS_KEY }}
