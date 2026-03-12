@@ -39,10 +39,7 @@ const applyBiquad = (samples: number[], c: BiquadCoeffs): number[] => {
  * Compute biquad coefficients for a second-order Butterworth low-pass and high-pass filters.
  * formulas from: https://www.musicdsp.org/en/latest/Filters/197-rbj-audio-eq-cookbook.html
  */
-const lowPassCoeffs = (
-  cutoffHz: number,
-  sampleRate: number
-): BiquadCoeffs => {
+const lowPassCoeffs = (cutoffHz: number, sampleRate: number): BiquadCoeffs => {
   const w0 = (2 * Math.PI * cutoffHz) / sampleRate;
   const alpha = Math.sin(w0) / (2 * Math.SQRT2); // Q = 1/sqrt(2) for Butterworth
   const cosW0 = Math.cos(w0);
@@ -56,10 +53,7 @@ const lowPassCoeffs = (
   };
 };
 
-const highPassCoeffs = (
-  cutoffHz: number,
-  sampleRate: number
-): BiquadCoeffs => {
+const highPassCoeffs = (cutoffHz: number, sampleRate: number): BiquadCoeffs => {
   const w0 = (2 * Math.PI * cutoffHz) / sampleRate;
   const alpha = Math.sin(w0) / (2 * Math.SQRT2);
   const cosW0 = Math.cos(w0);
@@ -85,7 +79,7 @@ export const splitAudioToXYZ = (
   samples: number[],
   sampleRate: number,
   lowCutoff: number = 300,
-  highCutoff: number = 2000
+  highCutoff: number = 2000,
 ): XYZData => {
   const low = applyBiquad(samples, lowPassCoeffs(lowCutoff, sampleRate));
   const high = applyBiquad(samples, highPassCoeffs(highCutoff, sampleRate));
@@ -98,9 +92,9 @@ export const AUDIO_SAMPLE_RATE = 8000; // 8 kHz — enough for speech
 
 export const audioDataWindow: DataWindow = {
   duration: currentDataWindow.duration,
-  minSamples: Math.floor((AUDIO_SAMPLE_RATE * currentDataWindow.duration) / 1000),
+  minSamples: Math.floor(
+    (AUDIO_SAMPLE_RATE * currentDataWindow.duration) / 1000,
+  ),
   deviceSamplesPeriod: Math.round(1000 / AUDIO_SAMPLE_RATE),
   deviceSamplesLength: AUDIO_SAMPLE_RATE,
 };
-
-
