@@ -79,7 +79,7 @@ export const splitAudioToXYZ = (
   samples: number[],
   sampleRate: number,
   lowCutoff: number = 300,
-  highCutoff: number = 2000,
+  highCutoff: number = 2000
 ): XYZData => {
   const low = applyBiquad(samples, lowPassCoeffs(lowCutoff, sampleRate));
   const high = applyBiquad(samples, highPassCoeffs(highCutoff, sampleRate));
@@ -93,7 +93,7 @@ export const AUDIO_SAMPLE_RATE = 8000; // 8 kHz — enough for speech
 export const audioDataWindow: DataWindow = {
   duration: currentDataWindow.duration,
   minSamples: Math.floor(
-    (AUDIO_SAMPLE_RATE * currentDataWindow.duration) / 1000,
+    (AUDIO_SAMPLE_RATE * currentDataWindow.duration) / 1000
   ),
   deviceSamplesPeriod: Math.round(1000 / AUDIO_SAMPLE_RATE),
   deviceSamplesLength: AUDIO_SAMPLE_RATE,
