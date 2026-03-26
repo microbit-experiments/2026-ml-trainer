@@ -33,9 +33,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
   <script>
-    // --- Config ---
+    // --- Config (keep in sync with src/audioConfig.ts) ---
     const SAMPLE_RATE = 8000;
     const DURATION_MS = 990;
+    const LOW_CUTOFF = 300;
+    const HIGH_CUTOFF = 2000;
     const NUM_EPOCHS = 160;
     const LEARNING_RATE = 0.1;
 
@@ -85,11 +87,91 @@
       return { b0: (1 + cosW0) / 2, b1: -(1 + cosW0), b2: (1 + cosW0) / 2, a0: 1 + alpha, a1: -2 * cosW0, a2: 1 - alpha };
     }
 
+    function preEmphasize(samples, alpha = 0.97) {
+      if (!samples.length) return samples;
+      const out = new Array(samples.length);
+      out[0] = samples[0];
+      for (let i = 1; i < samples.length; i++) {
+        out[i] = samples[i] - alpha * samples[i - 1];
+      }
+      return out;
+    }
+
+    function frameRms(samples, frameMs = 25, hopMs = 10) {
+      const frameLen = Math.max(1, Math.round((frameMs / 1000) * SAMPLE_RATE));
+      const hopLen = Math.max(1, Math.round((hopMs / 1000) * SAMPLE_RATE));
+      const out = [];
+      for (let start = 0; start < samples.length; start += hopLen) {
+        const end = Math.min(start + frameLen, samples.length);
+        let sum = 0;
+        for (let i = start; i < end; i++) sum += samples[i] * samples[i];
+        out.push(Math.sqrt(sum / Math.max(end - start, 1)));
+        if (end === samples.length) break;
+      }
+      return out;
+    }
+
     function splitAudioToXYZ(samples) {
-      const low = applyBiquad(samples, lowPassCoeffs(300, SAMPLE_RATE));
-      const high = applyBiquad(samples, highPassCoeffs(2000, SAMPLE_RATE));
-      const mid = samples.map((s, i) => s - low[i] - high[i]);
-      return { x: low, y: mid, z: high };
+      const emphasized = preEmphasize(samples);
+      const low = applyBiquad(emphasized, lowPassCoeffs(LOW_CUTOFF, SAMPLE_RATE));
+      const high = applyBiquad(emphasized, highPassCoeffs(HIGH_CUTOFF, SAMPLE_RATE));
+      const mid = applyBiquad(
+        applyBiquad(emphasized, highPassCoeffs(LOW_CUTOFF, SAMPLE_RATE)),
+        lowPassCoeffs(HIGH_CUTOFF, SAMPLE_RATE)
+      );
+      return {
+        x: frameRms(low),
+        y: frameRms(mid),
+        z: frameRms(high),
+      };
+    }
+
+    // --- Preprocessing helpers ---
+    function normalizeClip(samples, targetRms = 0.1) {
+      const rms = Math.sqrt(samples.reduce((s, x) => s + x * x, 0) / samples.length);
+      if (rms < 1e-6) return samples;
+      const gain = targetRms / rms;
+      return samples.map((s) => s * gain);
+    }
+
+    function trimAndCenter(samples, threshold = 0.01, windowMs = 25, hangoverMs = 100) {
+      const winLen = Math.round((windowMs / 1000) * SAMPLE_RATE);
+      const hangover = Math.round((hangoverMs / 1000) * SAMPLE_RATE);
+      const windowRms = (start) => {
+        let sum = 0;
+        const end = Math.min(start + winLen, samples.length);
+        for (let i = start; i < end; i++) sum += samples[i] * samples[i];
+        return Math.sqrt(sum / Math.max(end - start, 1));
+      };
+      let start = samples.length;
+      for (let i = 0; i + winLen <= samples.length; i += winLen) {
+        if (windowRms(i) > threshold) { start = Math.max(0, i - winLen); break; }
+      }
+      let end = 0;
+      for (let i = samples.length - winLen; i >= 0; i -= winLen) {
+        if (windowRms(i) > threshold) { end = Math.min(samples.length, i + winLen + hangover); break; }
+      }
+      if (start >= end) return samples;
+      const content = samples.slice(start, end);
+      if (content.length >= samples.length) return samples;
+      const padTotal = samples.length - content.length;
+      const padLeft = Math.floor(padTotal / 2);
+      return [...new Array(padLeft).fill(0), ...content, ...new Array(padTotal - padLeft).fill(0)];
+    }
+
+    function augmentClip(samples, gainRange = 0.1, shiftMs = 20) {
+      const gain = 1 + (Math.random() * 2 - 1) * gainRange;
+      const out = samples.map((s) => s * gain);
+      const maxShift = Math.round((shiftMs / 1000) * SAMPLE_RATE);
+      const shift = Math.round((Math.random() * 2 - 1) * maxShift);
+      if (shift === 0) return out;
+      if (shift > 0) return [...new Array(shift).fill(0), ...out.slice(0, out.length - shift)];
+      return [...out.slice(-shift), ...new Array(-shift).fill(0)];
+    }
+
+    // Preprocess a recorded clip: trim silence, then normalise loudness.
+    function preprocessClip(raw) {
+      return normalizeClip(trimAndCenter(raw));
     }
 
     // --- Feature extraction (same filters as mlConfig.ts) ---
@@ -213,10 +295,10 @@
     async function record(classIndex) {
       log(`Recording "${classes[classIndex].name}"...`);
       try {
-        const samples = await recordClip();
-        const xyz = splitAudioToXYZ(samples);
-        classes[classIndex].recordings.push(xyz);
-        log(`  Got ${samples.length} samples → features: [${applyFilters(xyz).map((v) => v.toFixed(2)).join(", ")}]`);
+        const raw = await recordClip();
+        classes[classIndex].recordings.push(raw); // store raw audio for augmentation at training time
+        const xyz = splitAudioToXYZ(preprocessClip(raw));
+        log(`  Got ${raw.length} samples → features: [${applyFilters(xyz).map((v) => v.toFixed(2)).join(", ")}]`);
         renderClasses();
       } catch (e) {
         log(`  ✗ ${e.message}`);
@@ -232,12 +314,19 @@
       const labels = [];
       const numClasses = classes.length;
 
+      const AUGMENTS_PER_CLIP = 2; // synthetic copies per real recording
       classes.forEach((cls, ci) => {
-        cls.recordings.forEach((xyz) => {
-          features.push(applyFilters(xyz));
+        cls.recordings.forEach((raw) => {
           const label = new Array(numClasses).fill(0);
           label[ci] = 1;
+          // Original (trimmed + normalised)
+          features.push(applyFilters(splitAudioToXYZ(preprocessClip(raw))));
           labels.push(label);
+          // Augmented copies (gain jitter + time shift)
+          for (let a = 0; a < AUGMENTS_PER_CLIP; a++) {
+            features.push(applyFilters(splitAudioToXYZ(preprocessClip(augmentClip(raw)))));
+            labels.push(label.slice());
+          }
         });
       });
 
@@ -290,7 +379,7 @@
       predictInterval = setInterval(() => {
         if (ring.length < maxLen) return;
         const samples = ring.slice(-maxLen);
-        const xyz = splitAudioToXYZ(samples);
+        const xyz = splitAudioToXYZ(normalizeClip(samples)); // normalize live stream; no trim (not a discrete clip)
         const input = applyFilters(xyz);
         const pred = model.predict(tf.tensor([input]));
         const confidences = pred.dataSync();
