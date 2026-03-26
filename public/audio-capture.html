@@ -1,0 +1,188 @@
+<!-- written by generative AI -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Audio Benchmark Capture</title>
+  <style>
+    body { font-family: system-ui; max-width: 680px; margin: 2em auto; padding: 0 1em; }
+    h1 { font-size: 1.4em; }
+    p.hint { color: #555; font-size: 0.9em; }
+    button { padding: 6px 14px; margin: 4px; cursor: pointer; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .class-box { border: 1px solid #ccc; border-radius: 6px; padding: 10px 14px; margin: 8px 0; }
+    .class-box h3 { margin: 0 0 4px; font-size: 1em; }
+    .class-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .recordings-list { font-size: 0.85em; color: #444; margin-top: 4px; }
+    #log { white-space: pre-wrap; background: #f5f5f5; padding: 10px; border-radius: 4px;
+           font-size: 12px; max-height: 200px; overflow-y: auto; margin-top: 1em; }
+    .badge { background: #4a9; color: #fff; border-radius: 10px; padding: 1px 8px; font-size: 0.8em; }
+    #download { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Audio Benchmark Capture</h1>
+  <p class="hint">
+    Record 4–6 samples per class, then click <strong>Download fixture</strong>.
+    Save the file to <code>src/test-fixtures/audio-benchmark.json</code> and run
+    <code>npx vitest audio-eval</code>.
+  </p>
+
+  <div style="display:flex; gap:8px; margin-bottom:8px;">
+    <input id="className" placeholder="Class name (e.g. cat)" style="padding:5px; flex:1;">
+    <button onclick="addClass()">Add class</button>
+  </div>
+  <div id="classes"></div>
+
+  <hr>
+  <button id="downloadBtn" onclick="downloadFixture()" disabled>Download fixture</button>
+  <div id="log"></div>
+
+  <script>
+    // Config — keep in sync with src/audioConfig.ts
+    const SAMPLE_RATE = 8000;
+    const DURATION_MS = 990;
+
+    // State: each class stores raw PCM samples (not XYZ) so preprocessing can be varied later.
+    let classes = []; // [{ name, ID, rawSamples: number[][] }]
+
+    function log(msg) {
+      const el = document.getElementById("log");
+      el.textContent += msg + "\n";
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function addClass() {
+      const input = document.getElementById("className");
+      const name = input.value.trim();
+      if (!name) return;
+      if (classes.some((c) => c.name === name)) { log(`Class "${name}" already exists.`); return; }
+      classes.push({ name, ID: Date.now(), rawSamples: [] });
+      input.value = "";
+      render();
+    }
+
+    function deleteClass(i) {
+      classes.splice(i, 1);
+      render();
+    }
+
+    function deleteRecording(ci, ri) {
+      classes[ci].rawSamples.splice(ri, 1);
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById("classes");
+      container.innerHTML = "";
+      classes.forEach((cls, i) => {
+        const div = document.createElement("div");
+        div.className = "class-box";
+        const badge = `<span class="badge">${cls.rawSamples.length}</span>`;
+        div.innerHTML = `
+          <h3>${cls.name} ${badge}</h3>
+          <div class="class-row">
+            <button onclick="record(${i})">&#9679; Record</button>
+            <button onclick="deleteClass(${i})" style="color:#c00;">Remove class</button>
+          </div>
+          <div class="recordings-list" id="recs-${i}"></div>`;
+        container.appendChild(div);
+        const recList = document.getElementById(`recs-${i}`);
+        cls.rawSamples.forEach((_, ri) => {
+          const span = document.createElement("span");
+          span.style.marginRight = "10px";
+          span.innerHTML = `clip ${ri + 1} <button onclick="deleteRecording(${i},${ri})" style="font-size:0.8em;padding:1px 5px;">✕</button>`;
+          recList.appendChild(span);
+        });
+      });
+
+      const canDownload = classes.length >= 2 && classes.every((c) => c.rawSamples.length >= 1);
+      document.getElementById("downloadBtn").disabled = !canDownload;
+    }
+
+    // ---- Recording -------------------------------------------------------
+
+    async function recordClip() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+      const actualRate = audioCtx.sampleRate;
+      const source = audioCtx.createMediaStreamSource(stream);
+      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      const samples = [];
+
+      return new Promise((resolve, reject) => {
+        processor.onaudioprocess = (e) => {
+          const data = e.inputBuffer.getChannelData(0);
+          for (let i = 0; i < data.length; i++) samples.push(data[i]);
+        };
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+
+        setTimeout(() => {
+          processor.disconnect();
+          source.disconnect();
+          stream.getTracks().forEach((t) => t.stop());
+          audioCtx.close();
+
+          let result = samples;
+          if (actualRate !== SAMPLE_RATE) {
+            const ratio = actualRate / SAMPLE_RATE;
+            result = [];
+            for (let i = 0; i < samples.length; i += ratio) result.push(samples[Math.floor(i)]);
+          }
+          const expected = Math.floor((SAMPLE_RATE * DURATION_MS) / 1000);
+          const clip = result.slice(0, expected);
+          if (clip.length < expected / 2) {
+            reject(new Error(`Only got ${clip.length}/${expected} samples — try again.`));
+          } else {
+            // Zero-pad to exact length if slightly short.
+            while (clip.length < expected) clip.push(0);
+            resolve(clip);
+          }
+        }, DURATION_MS + 200);
+      });
+    }
+
+    async function record(classIndex) {
+      const btn = document.querySelectorAll(".class-box")[classIndex].querySelector("button");
+      btn.disabled = true;
+      log(`Recording "${classes[classIndex].name}"…`);
+      try {
+        const raw = await recordClip();
+        classes[classIndex].rawSamples.push(raw);
+        log(`  ✓ clip ${classes[classIndex].rawSamples.length} captured (${raw.length} samples)`);
+        render();
+      } catch (e) {
+        log(`  ✗ ${e.message}`);
+      } finally {
+        // btn may have been replaced by render(), just re-render.
+        render();
+      }
+    }
+
+    // ---- Download --------------------------------------------------------
+
+    function downloadFixture() {
+      const payload = classes.map((cls) => ({
+        name: cls.name,
+        ID: cls.ID,
+        rawSamples: cls.rawSamples.map((s) =>
+          // Round to 4 dp to keep file size manageable.
+          s.map((v) => Math.round(v * 10000) / 10000),
+        ),
+      }));
+      const json = JSON.stringify(payload, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "audio-benchmark.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      log(`Downloaded fixture: ${classes.length} classes, ` +
+          `${classes.reduce((s, c) => s + c.rawSamples.length, 0)} total recordings, ` +
+          `${(json.length / 1024).toFixed(0)} KB`);
+    }
+  </script>
+</body>
+</html>
