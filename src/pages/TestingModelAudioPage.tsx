@@ -1,9 +1,3 @@
-/**
- * (c) 2023, Center for Computational Thinking and Design at Aarhus University and contributors
- * Modifications (c) 2024, Micro:bit Educational Foundation and contributors
- *
- * SPDX-License-Identifier: MIT
- */
 import {
   Button,
   ButtonGroup,
@@ -39,7 +33,7 @@ import { tourElClassname } from "../tours";
 import { createDataSamplesPageUrl } from "../urls";
 import { ButtonWithLoading } from "../components/ButtonWithLoading";
 
-const TestingModelMotionPage = () => {
+const TestingModelAudioPage = () => {
   const navigate = useNavigate();
   const model = useStore((s) => s.model);
   const startPredicting = useStore((s) => s.startPredicting);
@@ -113,7 +107,7 @@ const TestingModelMotionPage = () => {
 
   return model ? (
     <DefaultPageLayout
-      titleId="testing-model-motion-title"
+      titleId="testing-model-title"
       showPageTitle
       menuItems={<ProjectMenuItems />}
       toolbarItemsRight={<ProjectToolbarItems />}
@@ -195,4 +189,4 @@ const TestingModelMotionPage = () => {
   );
 };
 
-export default TestingModelMotionPage;
+export default TestingModelAudioPage;

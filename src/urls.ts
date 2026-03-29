@@ -17,8 +17,14 @@ export const createImportPageUrl = () => `${basepath}import`;
 
 export const createOpenSharedProjectPageUrl = () => `${basepath}:shareId`;
 
-export const createDataSamplesPageUrl = () => `${basepath}data-samples`;
+export const createSelectTypePageUrl = () => `${basepath}select-type`;
 
-export const createTestingModelPageUrl = () => `${basepath}testing-model`;
+export const createDataSamplesPageUrl = () => `${basepath}data-samples-motion`;
+
+export const createDataSamplesAudioPageUrl = () => `${basepath}data-samples-audio`;
+
+export const createTestingModelPageUrl = () => `${basepath}testing-model-motion`;
+
+export const createTestingModelAudioPageUrl = () => `${basepath}testing-model-audio`;
 
 export const createCodePageUrl = () => `${basepath}code`;

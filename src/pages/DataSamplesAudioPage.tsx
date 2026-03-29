@@ -20,9 +20,9 @@ import { useConnectionStage } from "../connection-stage-hooks";
 import { keyboardShortcuts, useShortcut } from "../keyboard-shortcut-hooks";
 import { useHasSufficientDataForTraining, useStore } from "../store";
 import { tourElClassname } from "../tours";
-import { createTestingModelPageUrl } from "../urls";
+import { createTestingModelAudioPageUrl } from "../urls";
 
-const DataSamplesMotionPage = () => {
+const DataSamplesAudioPage = () => {
   const actions = useStore((s) => s.actions);
   const addNewAction = useStore((s) => s.addNewAction);
   const model = useStore((s) => s.model);
@@ -44,7 +44,7 @@ const DataSamplesMotionPage = () => {
   const isAddNewActionDisabled = actions.some((a) => a.name.length === 0);
 
   const handleNavigateToModel = useCallback(() => {
-    navigate(createTestingModelPageUrl());
+    navigate(createTestingModelAudioPageUrl());
   }, [navigate]);
 
   const trainButtonRef = useRef(null);
@@ -126,4 +126,4 @@ const DataSamplesMotionPage = () => {
   );
 };
 
-export default DataSamplesMotionPage;
+export default DataSamplesAudioPage;
