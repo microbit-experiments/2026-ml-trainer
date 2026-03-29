@@ -3,16 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Audio ML Test</title>
-  <style>
-    body { font-family: system-ui; max-width: 700px; margin: 2em auto; }
-    button { padding: 6px 14px; margin: 4px; cursor: pointer; }
-    button:disabled { opacity: 0.4; cursor: default; }
-    .class-box { border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin: 8px 0; }
-    .class-box h3 { margin: 0 0 6px; }
-    #log { white-space: pre-wrap; background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 13px; max-height: 300px; overflow-y: auto; }
-    .bar { height: 18px; background: #4a9; border-radius: 3px; transition: width 0.15s; margin: 2px 0; }
-    .bar-label { font-size: 13px; }
-  </style>
+  <link rel="stylesheet" href="audio-test.css">
 </head>
 <body>
   <h1>Audio ML Test</h1>
@@ -286,10 +277,21 @@
       classes.forEach((cls, i) => {
         const div = document.createElement("div");
         div.className = "class-box";
-        div.innerHTML = `<h3>${cls.name}</h3><span>${cls.recordings.length} recording(s)</span> <button onclick="record(${i})">Record 1s</button>`;
+        div.innerHTML = `<h3>${cls.name}</h3> <span>${cls.recordings.length} recording(s)</span> <button onclick="record(${i})">Record 1s</button> <button class="del" onclick="delClass(${i})">Delete</button>`;
         container.appendChild(div);
       });
       document.getElementById("trainBtn").disabled = classes.length < 2 || classes.some((c) => c.recordings.length < 1);
+    }
+
+    async function delClass(classIndex) {
+      log(`Deleting class "${classes[classIndex].name}"...`);
+      try {
+        classes.splice(classIndex, 1);
+        log(`Class deleted`);
+        renderClasses();
+      } catch (e) {
+        log(`  ✗ ${e.message}`);
+      }
     }
 
     async function record(classIndex) {
