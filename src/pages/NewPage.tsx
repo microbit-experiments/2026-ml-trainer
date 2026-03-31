@@ -28,7 +28,7 @@ import LoadProjectInput, {
 import NewPageChoice from "../components/NewPageChoice";
 import { useLogging } from "../logging/logging-hooks";
 import { useStore } from "../store";
-import { createDataSamplesPageUrl, createSelectTypePageUrl } from "../urls";
+import { createDataSamplesPageUrl } from "../urls";
 import { useProjectName } from "../hooks/project-hooks";
 
 const NewPage = () => {
@@ -51,7 +51,11 @@ const NewPage = () => {
   }, []);
 
   const handleStartNewSession = useCallback(() => {
-    navigate(createSelectTypePageUrl());
+    logging.event({
+      type: "session-open-new",
+    });
+    newSession();
+    navigate(createDataSamplesPageUrl());
   }, [logging, newSession, navigate]);
 
   const intl = useIntl();

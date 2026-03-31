@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { RiAddLine, RiArrowRightLine } from "react-icons/ri";
 import { FormattedMessage, useIntl } from "react-intl";
 import { useNavigate } from "react-router";
-import DataSamplesMotionTable from "../components/DataSamplesTable";
+import DataSamplesTable from "../components/DataSamplesTable";
 import DefaultPageLayout, {
   ProjectMenuItems,
   ProjectToolbarItems,
@@ -22,7 +22,7 @@ import { useHasSufficientDataForTraining, useStore } from "../store";
 import { tourElClassname } from "../tours";
 import { createTestingModelPageUrl } from "../urls";
 
-const DataSamplesMotionPage = () => {
+const DataSamplesPage = () => {
   const actions = useStore((s) => s.actions);
   const addNewAction = useStore((s) => s.addNewAction);
   const model = useStore((s) => s.model);
@@ -60,13 +60,13 @@ const DataSamplesMotionPage = () => {
     <>
       <TrainModelDialogs finalFocusRef={trainButtonRef} />
       <DefaultPageLayout
-        titleId="data-samples-motion-title"
+        titleId="data-samples-title"
         showPageTitle
         menuItems={<ProjectMenuItems />}
         toolbarItemsRight={<ProjectToolbarItems />}
       >
         <Flex as="main" flexGrow={1} flexDir="column">
-          <DataSamplesMotionTable
+          <DataSamplesTable
             selectedActionIdx={selectedActionIdx}
             setSelectedActionIdx={setSelectedActionIdx}
           />
@@ -105,7 +105,7 @@ const DataSamplesMotionPage = () => {
                   variant="primary"
                   rightIcon={<RiArrowRightLine />}
                 >
-                  <FormattedMessage id="test-model" />
+                  <FormattedMessage id="testing-model-title" />
                 </Button>
               ) : (
                 <Button
@@ -126,4 +126,4 @@ const DataSamplesMotionPage = () => {
   );
 };
 
-export default DataSamplesMotionPage;
+export default DataSamplesPage;

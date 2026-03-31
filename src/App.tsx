@@ -42,26 +42,20 @@ import TranslationProvider from "./messages/TranslationProvider";
 import { PostImportDialogState } from "./model";
 import CodePage from "./pages/CodePage";
 import DataSamplesPage from "./pages/DataSamplesPage";
-import DataSamplesAudioPage from "./pages/DataSamplesAudioPage";
-import SelectTypePage from "./pages/SelectTypePage";
 import HomePage from "./pages/HomePage";
 import ImportPage from "./pages/ImportPage";
 import NewPage from "./pages/NewPage";
 import TestingModelPage from "./pages/TestingModelPage";
-import TestingModelAudioPage from "./pages/TestingModelAudioPage";
 import OpenSharedProjectPage from "./pages/OpenSharedProjectPage";
 import { useStore } from "./store";
 import {
   createCodePageUrl,
   createDataSamplesPageUrl,
-  createDataSamplesAudioPageUrl,
-  createSelectTypePageUrl,
   createHomePageUrl,
   createImportPageUrl,
   createOpenSharedProjectPageUrl,
   createNewPageUrl,
   createTestingModelPageUrl,
-  createTestingModelAudioPageUrl
 } from "./urls";
 
 export interface ProviderLayoutProps {
@@ -180,20 +174,8 @@ const createRouter = () => {
           element: <DataSamplesPage />,
         },
         {
-          path: createDataSamplesAudioPageUrl(),
-          element: <DataSamplesAudioPage />,
-        },
-        {
-          path: createSelectTypePageUrl(),
-          element: <SelectTypePage />,
-        },
-        {
           path: createTestingModelPageUrl(),
           element: <TestingModelPage />,
-        },
-        {
-          path: createTestingModelAudioPageUrl(),
-          element: <TestingModelAudioPage />,
         },
         {
           path: createCodePageUrl(),

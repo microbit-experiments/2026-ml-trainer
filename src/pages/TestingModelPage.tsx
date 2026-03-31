@@ -39,7 +39,7 @@ import { tourElClassname } from "../tours";
 import { createDataSamplesPageUrl } from "../urls";
 import { ButtonWithLoading } from "../components/ButtonWithLoading";
 
-const TestingModelMotionPage = () => {
+const TestingModelPage = () => {
   const navigate = useNavigate();
   const model = useStore((s) => s.model);
   const startPredicting = useStore((s) => s.startPredicting);
@@ -113,7 +113,7 @@ const TestingModelMotionPage = () => {
 
   return model ? (
     <DefaultPageLayout
-      titleId="testing-model-motion-title"
+      titleId="testing-model-title"
       showPageTitle
       menuItems={<ProjectMenuItems />}
       toolbarItemsRight={<ProjectToolbarItems />}
@@ -195,4 +195,4 @@ const TestingModelMotionPage = () => {
   );
 };
 
-export default TestingModelMotionPage;
+export default TestingModelPage;
