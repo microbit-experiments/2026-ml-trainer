@@ -5,7 +5,7 @@
  */
 #include "MicroBit.h"
 #include "MicroBitUARTService.h"
-#include "MicroBitMicrophoneService.h"
+#include "MicroBitAccelerometerService.h"
 #include "MicroBitIOPinService.h"
 #include "MicroBitLEDService.h"
 #include "MicroBitButtonService.h"
@@ -17,7 +17,7 @@ MicroBit uBit;
 typedef __uint8_t uint8_t ;
 
 // Services
-MicroBitMicrophoneService *microphone;
+MicroBitAccelerometerService *accel;
 MicroBitUARTService *uart;
 MicroBitLEDService *led;
 MicroBitIOPinService *io;
@@ -100,7 +100,7 @@ int main()
     led = new MicroBitLEDService(*uBit.ble, uBit.display);
     io = new MicroBitIOPinService(*uBit.ble, uBit.io);
     btn = new MicroBitButtonService(*uBit.ble);
-    microphone = new MicroBitMicrophoneService(*uBit.ble, uBit.audio);
+    accel = new MicroBitAccelerometerService(*uBit.ble, uBit.accelerometer);
 
     uart->eventOn("#");
 
