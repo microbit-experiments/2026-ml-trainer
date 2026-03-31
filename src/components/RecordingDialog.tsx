@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { TimedXYZ } from "../buffered-data";
 import { useBufferedData } from "../buffered-data-hooks";
+import { ConnectionStatus, useConnectStatus } from "../connect-status-hooks";
 import { ActionData, XYZData } from "../model";
 import { useStore } from "../store";
 
@@ -72,6 +73,7 @@ const RecordingDialog = ({
   const recordingStarted = useStore((s) => s.recordingStarted);
   const recordingStopped = useStore((s) => s.recordingStopped);
   const addActionRecordings = useStore((s) => s.addActionRecordings);
+  const [connectionStatus] = useConnectStatus();
   const recordingDataSource = useRecordingDataSource();
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>(
     RecordingStatus.None
@@ -180,11 +182,14 @@ const RecordingDialog = ({
       },
       onError() {
         handleCleanup();
+        const isConnected = connectionStatus === ConnectionStatus.Connected;
         toast({
           position: "top",
           duration: 5_000,
           title: intl.formatMessage({
-            id: "disconnected-during-recording",
+            id: isConnected
+              ? "insufficient-data-title"
+              : "disconnected-during-recording",
           }),
           variant: "subtle",
           status: "error",
@@ -200,6 +205,7 @@ const RecordingDialog = ({
     actionId,
     handleCleanup,
     intl,
+    connectionStatus,
     recordingDataSource,
     recordingStopped,
     recordingsRemaining,

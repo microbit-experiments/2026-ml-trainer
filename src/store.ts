@@ -72,7 +72,7 @@ const legacyDataWindow: DataWindow = {
 // Exported for testing.
 export const currentDataWindow: DataWindow = {
   duration: 990,
-  minSamples: 44,
+  minSamples: 32,
   deviceSamplesPeriod: 20, // Default value for accelerometer period.
   deviceSamplesLength: 50, // Number of samples required at 20 ms intervals for 1 second of data.
 };
