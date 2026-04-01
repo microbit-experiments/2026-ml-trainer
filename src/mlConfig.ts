@@ -129,6 +129,8 @@ const rms: FilterStrategy = (d) => _rms(d);
 export const maxAcceleration = 2.048;
 export const maxAccelerationScaleForGraphs = 2.2;
 
+export const maxAmplitudeScaleForGraphs = 1;
+
 export const getMlFilters = (
   dataWindow: DataWindow
 ): Record<Filter, { strategy: FilterStrategy; min: number; max: number }> => ({

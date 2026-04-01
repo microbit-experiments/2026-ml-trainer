@@ -4,7 +4,6 @@
  *
  * SPDX-License-Identifier: MIT
  */
-import { AccelerometerDataEvent } from "@microbit/microbit-connection";
 import {
   ReactNode,
   createContext,
@@ -14,9 +13,15 @@ import {
   useRef,
 } from "react";
 import { BufferedData } from "./buffered-data";
-import { useConnectActions } from "./connect-actions-hooks";
+//import { useConnectActions } from "./connect-actions-hooks";
 import { ConnectionStatus, useConnectStatus } from "./connect-status-hooks";
 import { useStore } from "./store";
+import {
+  addAudioListener,
+  removeAudioListener,
+  startAudioStream,
+  AudioXYZEvent,
+} from "./audio-input";
 
 const BufferedDataContext = createContext<BufferedData | null>(null);
 
@@ -43,7 +48,7 @@ export const useBufferedData = (): BufferedData => {
 
 const useBufferedDataInternal = (): BufferedData => {
   const [connectStatus] = useConnectStatus();
-  const connection = useConnectActions();
+  //const connection = useConnectActions();
   const dataWindow = useStore((s) => s.dataWindow);
   const bufferRef = useRef<BufferedData>();
   const getBuffer = useCallback(() => {
@@ -57,19 +62,21 @@ const useBufferedDataInternal = (): BufferedData => {
     if (connectStatus !== ConnectionStatus.Connected) {
       return;
     }
-    const listener = (e: AccelerometerDataEvent) => {
+
+    // Start audio capture
+    const cleanup = startAudioStream();
+
+    // Subscribe to audio data and add samples to buffer
+    const listener = (e: AudioXYZEvent) => {
       const { x, y, z } = e.data;
-      const sample = {
-        x: x / 1000,
-        y: y / 1000,
-        z: z / 1000,
-      };
-      getBuffer().addSample(sample, Date.now());
+      getBuffer().addSample({ x, y, z }, Date.now());
     };
-    connection.addAccelerometerListener(listener);
+    addAudioListener(listener);
+
     return () => {
-      connection.removeAccelerometerListener(listener);
+      cleanup();
+      removeAudioListener(listener);
     };
-  }, [connection, connectStatus, getBuffer]);
+  }, [connectStatus, getBuffer]);
   return getBuffer();
 };

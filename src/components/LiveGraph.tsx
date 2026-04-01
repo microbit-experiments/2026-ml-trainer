@@ -6,22 +6,23 @@
  */
 import { HStack, usePrevious } from "@chakra-ui/react";
 import { useSize } from "@chakra-ui/react-use-size";
-import { AccelerometerDataEvent } from "@microbit/microbit-connection";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SmoothieChart, TimeSeries } from "@microbit/smoothie";
 import { useConnectActions } from "../connect-actions-hooks";
 import { ConnectionStatus } from "../connect-status-hooks";
 import { useConnectionStage } from "../connection-stage-hooks";
 import { useGraphColors } from "../hooks/use-graph-colors";
-import { maxAccelerationScaleForGraphs } from "../mlConfig";
+import { maxAmplitudeScaleForGraphs } from "../mlConfig";
 import { useSettings, useStore } from "../store";
-import LiveGraphLabels from "./LiveGraphLabels";
 import { useGraphLineStyles } from "../hooks/use-graph-line-styles";
+import {
+  addAudioListener,
+  AudioXYZEvent,
+  removeAudioListener,
+} from "../audio-input";
 
 export const smoothenDataPoint = (curr: number, next: number) => {
-  // TODO: Factor out so that recording graph can do the same
-  // Remove dividing by 1000 operation once it gets moved to connection lib
-  return (next / 1000) * 0.25 + curr * 0.75;
+  return next * 0.25 + curr * 0.75;
 };
 
 const LiveGraph = () => {
@@ -55,8 +56,8 @@ const LiveGraph = () => {
       return;
     }
     const smoothieChart = new SmoothieChart({
-      maxValue: maxAccelerationScaleForGraphs,
-      minValue: -maxAccelerationScaleForGraphs,
+      maxValue: maxAmplitudeScaleForGraphs,
+      minValue: 0,
       millisPerPixel: 7,
       grid: {
         fillStyle: "#ffffff00",
@@ -124,13 +125,13 @@ const LiveGraph = () => {
     if (isRecording) {
       // Set the start recording line
       const now = new Date().getTime();
-      recordLines.append(now - 1, -maxAccelerationScaleForGraphs, false);
-      recordLines.append(now, maxAccelerationScaleForGraphs, false);
+      recordLines.append(now - 1, 0, false);
+      recordLines.append(now, maxAmplitudeScaleForGraphs, false);
     } else if (prevIsRecording) {
       // Set the end recording line
       const now = new Date().getTime();
-      recordLines.append(now - 1, maxAccelerationScaleForGraphs, false);
-      recordLines.append(now, -maxAccelerationScaleForGraphs, false);
+      recordLines.append(now - 1, maxAmplitudeScaleForGraphs, false);
+      recordLines.append(now, 0, false);
     }
   }, [isRecording, prevIsRecording, recordLines]);
 
@@ -141,7 +142,7 @@ const LiveGraph = () => {
   });
 
   useEffect(() => {
-    const listener = ({ data }: AccelerometerDataEvent) => {
+    const listener = ({ data }: AudioXYZEvent) => {
       const t = new Date().getTime();
       dataRef.current = {
         x: smoothenDataPoint(dataRef.current.x, data.x),
@@ -153,10 +154,10 @@ const LiveGraph = () => {
       lineZ.append(t, dataRef.current.z, false);
     };
     if (isConnected) {
-      connectActions.addAccelerometerListener(listener);
+      addAudioListener(listener);
     }
     return () => {
-      connectActions.removeAccelerometerListener(listener);
+      removeAudioListener(listener);
     };
   }, [connectActions, isConnected, lineX, lineY, lineZ]);
 
@@ -173,7 +174,7 @@ const LiveGraph = () => {
         id="smoothie-chart"
         width={width - 30}
       />
-      {isConnected && <LiveGraphLabels />}
+      {isConnected}
     </HStack>
   );
 };
