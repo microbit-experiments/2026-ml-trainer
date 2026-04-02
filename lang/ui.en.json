@@ -1412,7 +1412,7 @@
     "description": "Additional recording action text"
   },
   "record-seconds-help": {
-    "defaultMessage": "Move continuously to get {numSamples} samples",
+    "defaultMessage": "make noise continuously to get {numSamples} samples",
     "description": "Help text for additional recording action"
   },
   "recording": {
@@ -1648,7 +1648,7 @@
     "description": "Tour step title"
   },
   "tour-dataSamples-liveGraph-content": {
-    "defaultMessage": "The graph shows audio data from the micro:bit’s microphone. Move your data collection micro:bit and see how the graph changes.",
+    "defaultMessage": "The graph shows audio data from the micro:bit’s microphone. Make noise into your data collection micro:bit and see how the graph changes.",
     "description": "Tour step content"
   },
   "tour-makecode-intro-content1": {
@@ -1704,7 +1704,7 @@
     "description": "Tour step title"
   },
   "train-description": {
-    "defaultMessage": "The computer program spots patterns or differences in your data samples, and uses these to build a mathematical model that allows {appNameFull} to recognise different actions when you move your micro:bit.",
+    "defaultMessage": "The computer program spots patterns or differences in your data samples, and uses these to build a mathematical model that allows {appNameFull} to recognise different actions while your micro:bit listens.",
     "description": "Explanation on training dialog"
   },
   "train-error-body": {
