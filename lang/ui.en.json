@@ -17,7 +17,7 @@
   },
   "accelerometer-image-alt": {
     "defaultMessage": "micro:bit showing X axis going across the front, Y axis going down and up, Z axis going back to front",
-    "description": "Alt text for image showing the board-relative directions of the X/Y/Z dimensions of the micro:bit accelerometer"
+    "description": "Alt text for image showing the board-relative directions of the X/Y/Z dimensions of the micro:bit microphone"
   },
   "accessibility": {
     "defaultMessage": "Accessibility",
@@ -25,7 +25,7 @@
   },
   "action-label": {
     "defaultMessage": "Action",
-    "description": "Label for a movement-related action, e.g. clapping"
+    "description": "Label for a sound, e.g. humming"
   },
   "action-label-tooltip-aria": {
     "defaultMessage": "Action tooltip",
@@ -36,15 +36,15 @@
     "description": "Error message shown when an action name is too long"
   },
   "action-name-placeholder": {
-    "defaultMessage": "Name of action",
-    "description": "Placeholder text for user supplied name of a movement-related action, e.g. clapping"
+    "defaultMessage": "Name of sound",
+    "description": "Placeholder text for user supplied name of a sound, e.g. humming"
   },
   "action-region": {
     "defaultMessage": "Action \"{action}\"",
     "description": "Region label for action row"
   },
   "action-tooltip": {
-    "defaultMessage": "The type of movement you want {appNameFull} to recognise e.g. ‘waving’ or ‘clapping’.",
+    "defaultMessage": "The type of sound you want {appNameFull} to recognise e.g. ‘humming’ or ‘whistling’.",
     "description": "Tooltip explaining action"
   },
   "actions-label": {
@@ -53,7 +53,7 @@
   },
   "add-action-action": {
     "defaultMessage": "Add action",
-    "description": "Button to add an action (movement related, e.g. clapping)"
+    "description": "Button to add an action (sound related, e.g. humming)"
   },
   "ai-activity-timer-resource-title": {
     "defaultMessage": "AI activity timer",
@@ -93,7 +93,7 @@
   },
   "cancel-recording-action": {
     "defaultMessage": "Cancel recording",
-    "description": "Button label to cancel a movement data recording"
+    "description": "Button label to cancel an audio data recording"
   },
   "certainty-label": {
     "defaultMessage": "Certainty",
@@ -460,7 +460,7 @@
     "description": "Data samples page title"
   },
   "data-samples-tooltip": {
-    "defaultMessage": "Short collections of movement data lasting 1 second. Your data samples are only stored on your computer, they do not get sent to anyone else.",
+    "defaultMessage": "Short collections of audio data lasting 1 second. Your data samples are only stored on your computer, they do not get sent to anyone else.",
     "description": "Tooltip for data samples heading"
   },
   "default-project-name": {
@@ -792,11 +792,11 @@
     "description": "Link to home page"
   },
   "homepage-alt": {
-    "defaultMessage": "graph showing x, y, z graph lines representing micro:bit accelerometer data with clapping hands overlaid",
+    "defaultMessage": "graph showing x, y, z graph lines representing micro:bit microphone data with clapping hands overlaid",
     "description": "Alt text for image in homepage"
   },
   "homepage-alt-graph": {
-    "defaultMessage": "graph showing x, y, z graph lines representing micro:bit accelerometer data",
+    "defaultMessage": "graph showing x, y, z graph lines representing micro:bit microphone data",
     "description": "Alt text for image in homepage"
   },
   "homepage-alt-hands": {
@@ -804,11 +804,11 @@
     "description": "Alt text for image in homepage"
   },
   "homepage-alt-media": {
-    "defaultMessage": "video showing CreateAI detecting different movements",
+    "defaultMessage": "video showing CreateAI detecting different sounds",
     "description": "Alt text for media in homepage"
   },
   "homepage-description": {
-    "defaultMessage": "Train a machine learning model on your own movement data and run it on your micro:bit.",
+    "defaultMessage": "Train a machine learning model on your own audio data and run it on your micro:bit.",
     "description": "Home page description"
   },
   "homepage-how-it-works": {
@@ -880,7 +880,7 @@
     "description": "Home page section heading"
   },
   "homepage-subtitle": {
-    "defaultMessage": "Create AI on your BBC micro:bit using movement and machine learning.",
+    "defaultMessage": "Create AI on your BBC micro:bit using audio and machine learning.",
     "description": "Home page subtitle"
   },
   "homepage-video-alt": {
@@ -1132,7 +1132,7 @@
     "description": "Heading for live graph"
   },
   "live-graph-tooltip": {
-    "defaultMessage": "This graph shows movement data from the micro:bit's accelerometer in real time. Try moving your data collection micro:bit to see the X, Y and Z axes change. Each coloured line represents a different direction (dimension) you are moving the micro:bit in.",
+    "defaultMessage": "This graph shows audio data from the micro:bit's microphone in real time. Try moving your data collection micro:bit to see the X, Y and Z axes change. Each coloured line represents a different direction (dimension) you are moving the micro:bit in.",
     "description": "Tooltip for live graph heading"
   },
   "live-graph-tooltip-aria": {
@@ -1228,7 +1228,7 @@
     "description": "Open last session title"
   },
   "newpage-new-session-subtitle": {
-    "defaultMessage": "Connect your micro:bit and collect movement data to build a machine learning model.",
+    "defaultMessage": "Connect your micro:bit and collect audio data to build a machine learning model.",
     "description": "Start new session subtitle"
   },
   "newpage-new-session-title": {
@@ -1432,11 +1432,11 @@
     "description": "Text in recording dialog"
   },
   "recording-fingerprint-label": {
-    "defaultMessage": "heatmap showing micro:bit x, y, z accelerometer data features for one recording",
+    "defaultMessage": "heatmap showing micro:bit x, y, z microphone data features for one recording",
     "description": "Label for recording fingerprint heatmap"
   },
   "recording-graph-label": {
-    "defaultMessage": "graph showing micro:bit x, y, z accelerometer data for one recording",
+    "defaultMessage": "graph showing micro:bit x, y, z microphone data for one recording",
     "description": "Label for recording graph"
   },
   "recording-options-aria": {
@@ -1569,7 +1569,7 @@
   },
   "stop-recording-action": {
     "defaultMessage": "Stop recording",
-    "description": "Button label to stop recording movement data while recording multiple samples"
+    "description": "Button label to stop recording audio data while recording multiple samples"
   },
   "support-request": {
     "defaultMessage": "Please consider <link>raising a support request</link>.",
@@ -1632,7 +1632,7 @@
     "description": "Tour step description"
   },
   "tour-dataSamples-actions-common-content": {
-    "defaultMessage": "An action is the type of movement you want the machine learning model to recognise e.g. ‘waving’ or ‘clapping’.",
+    "defaultMessage": "An action is the type of audio you want the machine learning model to recognise e.g. ‘humming’ or ‘whistling’.",
     "description": "Tour step content"
   },
   "tour-dataSamples-actions-noRecordings-content": {
@@ -1640,7 +1640,7 @@
     "description": "Tour step content"
   },
   "tour-dataSamples-connected-content": {
-    "defaultMessage": "Now you can start collecting data samples to train a machine learning (ML) model to recognise different movements, or actions.",
+    "defaultMessage": "Now you can start collecting data samples to train a machine learning (ML) model to recognise different sounds",
     "description": "Tour step content"
   },
   "tour-dataSamples-connected-title": {
@@ -1648,7 +1648,7 @@
     "description": "Tour step title"
   },
   "tour-dataSamples-liveGraph-content": {
-    "defaultMessage": "The graph shows movement data from the micro:bit’s accelerometer. Move your data collection micro:bit and see how the graph changes.",
+    "defaultMessage": "The graph shows audio data from the micro:bit’s microphone. Move your data collection micro:bit and see how the graph changes.",
     "description": "Tour step content"
   },
   "tour-makecode-intro-content1": {
