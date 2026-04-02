@@ -94,7 +94,7 @@
   "action-tooltip": [
     {
       "type": 0,
-      "value": "The type of movement you want "
+      "value": "The type of sound you want "
     },
     {
       "type": 1,
@@ -102,7 +102,7 @@
     },
     {
       "type": 0,
-      "value": " to recognise e.g. ‘waving’ or ‘clapping’."
+      "value": " to recognise e.g. ‘humming’ or ‘whistling’."
     }
   ],
   "actions-label": [
@@ -774,7 +774,7 @@
   "data-samples-tooltip": [
     {
       "type": 0,
-      "value": "Short collections of movement data lasting 1 second. Your data samples are only stored on your computer, they do not get sent to anyone else."
+      "value": "Short collections of audio data lasting 1 second. Your data samples are only stored on your computer, they do not get sent to anyone else."
     }
   ],
   "default-project-name": [
@@ -1342,13 +1342,13 @@
   "homepage-alt": [
     {
       "type": 0,
-      "value": "graph showing x, y, z graph lines representing micro:bit accelerometer data with clapping hands overlaid"
+      "value": "graph showing x, y, z graph lines representing micro:bit microphone data with clapping hands overlaid"
     }
   ],
   "homepage-alt-graph": [
     {
       "type": 0,
-      "value": "graph showing x, y, z graph lines representing micro:bit accelerometer data"
+      "value": "graph showing x, y, z graph lines representing micro:bit microphone data"
     }
   ],
   "homepage-alt-hands": [
@@ -1360,13 +1360,13 @@
   "homepage-alt-media": [
     {
       "type": 0,
-      "value": "video showing CreateAI detecting different movements"
+      "value": "video showing CreateAI detecting different sounds"
     }
   ],
   "homepage-description": [
     {
       "type": 0,
-      "value": "Train a machine learning model on your own movement data and run it on your micro:bit."
+      "value": "Train a machine learning model on your own audio data and run it on your micro:bit."
     }
   ],
   "homepage-how-it-works": [
@@ -1502,7 +1502,7 @@
   "homepage-subtitle": [
     {
       "type": 0,
-      "value": "Create AI on your BBC micro:bit using movement and machine learning."
+      "value": "Create AI on your BBC micro:bit using audio and machine learning."
     }
   ],
   "homepage-video-alt": [
@@ -1926,7 +1926,7 @@
   "live-graph-tooltip": [
     {
       "type": 0,
-      "value": "This graph shows movement data from the micro:bit's accelerometer in real time. Try moving your data collection micro:bit to see the X, Y and Z axes change. Each coloured line represents a different direction (dimension) you are moving the micro:bit in."
+      "value": "This graph shows audio data from the micro:bit's microphone in real time. Try moving your data collection micro:bit to see the X, Y and Z axes change. Each coloured line represents a different direction (dimension) you are moving the micro:bit in."
     }
   ],
   "live-graph-tooltip-aria": [
@@ -2116,7 +2116,7 @@
   "newpage-new-session-subtitle": [
     {
       "type": 0,
-      "value": "Connect your micro:bit and collect movement data to build a machine learning model."
+      "value": "Connect your micro:bit and collect audio data to build a machine learning model."
     }
   ],
   "newpage-new-session-title": [
@@ -2512,13 +2512,13 @@
   "recording-fingerprint-label": [
     {
       "type": 0,
-      "value": "heatmap showing micro:bit x, y, z accelerometer data features for one recording"
+      "value": "heatmap showing micro:bit x, y, z microphone data features for one recording"
     }
   ],
   "recording-graph-label": [
     {
       "type": 0,
-      "value": "graph showing micro:bit x, y, z accelerometer data for one recording"
+      "value": "graph showing micro:bit x, y, z microphone data for one recording"
     }
   ],
   "recording-options-aria": [
@@ -2900,7 +2900,7 @@
   "tour-dataSamples-actions-common-content": [
     {
       "type": 0,
-      "value": "An action is the type of movement you want the machine learning model to recognise e.g. ‘waving’ or ‘clapping’."
+      "value": "An action is the type of sound you want the machine learning model to recognise e.g. ‘humming’ or ‘whistling’."
     }
   ],
   "tour-dataSamples-actions-noRecordings-content": [
@@ -2912,7 +2912,7 @@
   "tour-dataSamples-connected-content": [
     {
       "type": 0,
-      "value": "Now you can start collecting data samples to train a machine learning (ML) model to recognise different movements, or actions."
+      "value": "Now you can start collecting data samples to train a machine learning (ML) model to recognise different sounds."
     }
   ],
   "tour-dataSamples-connected-title": [
@@ -2924,7 +2924,7 @@
   "tour-dataSamples-liveGraph-content": [
     {
       "type": 0,
-      "value": "The graph shows movement data from the micro:bit’s accelerometer. Move your data collection micro:bit and see how the graph changes."
+      "value": "The graph shows audio data from the micro:bit’s microphone. Move your data collection micro:bit and see how the graph changes."
     }
   ],
   "tour-makecode-intro-content1": [
