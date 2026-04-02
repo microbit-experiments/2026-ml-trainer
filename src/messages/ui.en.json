@@ -2442,7 +2442,7 @@
   "record-seconds-help": [
     {
       "type": 0,
-      "value": "Move continuously to get "
+      "value": "Make sounds continuously to get "
     },
     {
       "type": 1,
@@ -2924,7 +2924,7 @@
   "tour-dataSamples-liveGraph-content": [
     {
       "type": 0,
-      "value": "The graph shows audio data from the micro:bit’s microphone. Move your data collection micro:bit and see how the graph changes."
+      "value": "The graph shows audio data from the micro:bit’s microphone. Make noise into your data collection micro:bit and see how the graph changes."
     }
   ],
   "tour-makecode-intro-content1": [
@@ -3016,7 +3016,7 @@
     },
     {
       "type": 0,
-      "value": " to recognise different actions when you move your micro:bit."
+      "value": " to recognise different actions when you make noise into your micro:bit."
     }
   ],
   "train-error-body": [
