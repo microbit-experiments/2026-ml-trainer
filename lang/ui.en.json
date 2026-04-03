@@ -40,7 +40,7 @@
     "description": "Placeholder text for user supplied name of a sound, e.g. humming"
   },
   "action-region": {
-    "defaultMessage": "Sound \"{action}\"",
+    "defaultMessage": "Sound \"{sound}\"",
     "description": "Region label for sound row"
   },
   "action-tooltip": {
@@ -104,7 +104,7 @@
     "description": "Aria label for code certainty icon"
   },
   "certainty-percentage-label": {
-    "defaultMessage": "certainty for {action}: {currentConfidence} percent",
+    "defaultMessage": "certainty for {sound}: {currentConfidence} percent",
     "description": "Label for certainty of a sound"
   },
   "certainty-tooltip": {
@@ -468,7 +468,7 @@
     "description": "Default project name"
   },
   "delete-action-aria": {
-    "defaultMessage": "Delete sound \"{action}\"",
+    "defaultMessage": "Delete sound \"{sound}\"",
     "description": "Aria label for sound delete icon"
   },
   "delete-action-confirm-heading": {
@@ -476,7 +476,7 @@
     "description": "Confirmation dialog heading"
   },
   "delete-action-confirm-text": {
-    "defaultMessage": "Are you sure you want to delete the sound \"{action}\"?",
+    "defaultMessage": "Are you sure you want to delete the sound \"{sound}\"?",
     "description": "Confirmation dialog text"
   },
   "delete-data-samples-action": {
@@ -492,7 +492,7 @@
     "description": "Confirmation dialog text"
   },
   "delete-recording-aria": {
-    "defaultMessage": "Delete recording {sample} of {numSamples} for sound \"{action}\"",
+    "defaultMessage": "Delete recording {sample} of {numSamples} for sound \"{sound}\"",
     "description": "Aria label for data sample delete sound"
   },
   "disconnect-action": {
@@ -592,7 +592,7 @@
     "description": "Edit in MakeCode button text"
   },
   "estimated-action-aria": {
-    "defaultMessage": "Estimated sound: \"{action}\"",
+    "defaultMessage": "Estimated sound: \"{sound}\"",
     "description": "Aria live text for the current estimated sound"
   },
   "estimated-action-label": {
@@ -1388,7 +1388,7 @@
     "description": "Record button text"
   },
   "record-action-aria": {
-    "defaultMessage": "Record data for sound \"{action}\"",
+    "defaultMessage": "Record data for sound \"{sound}\"",
     "description": "Aria label for record button"
   },
   "record-hint": {
@@ -1424,11 +1424,11 @@
     "description": "Text shown when data recording complete"
   },
   "recording-data-for": {
-    "defaultMessage": "Record data for sound \"{action}\"",
+    "defaultMessage": "Record data for sound \"{sound}\"",
     "description": "Text in recording dialog"
   },
   "recording-data-for-numbered": {
-    "defaultMessage": "Record {sample} of {numSamples} for sound \"{action}\"",
+    "defaultMessage": "Record {sample} of {numSamples} for sound \"{sound}\"",
     "description": "Text in recording dialog"
   },
   "recording-fingerprint-label": {
@@ -1440,7 +1440,7 @@
     "description": "Label for recording graph"
   },
   "recording-options-aria": {
-    "defaultMessage": "More recording options for sound \"{action}\"",
+    "defaultMessage": "More recording options for sound \"{sound}\"",
     "description": "Aria label for more recording options button"
   },
   "reload-action": {
@@ -1500,7 +1500,7 @@
     "description": "Notification after a hex file has been downloaded"
   },
   "select-icon-action-aria": {
-    "defaultMessage": "Pick icon for sound \"{action}\"",
+    "defaultMessage": "Pick icon for sound \"{sound}\"",
     "description": "Aria label for pick icon button"
   },
   "select-icon-action-untitled-aria": {
