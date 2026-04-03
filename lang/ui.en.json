@@ -36,7 +36,7 @@
     "description": "Error message shown when a sound name is too long"
   },
   "action-name-placeholder": {
-    "defaultMessage": "Name of sound",
+    "defaultMessage": "Name of action",
     "description": "Placeholder text for user supplied name of a sound, e.g. humming"
   },
   "action-region": {
