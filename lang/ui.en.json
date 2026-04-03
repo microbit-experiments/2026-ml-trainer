@@ -24,36 +24,36 @@
     "description": "Menu item for link to accessibility site"
   },
   "action-label": {
-    "defaultMessage": "Action",
+    "defaultMessage": "Sound",
     "description": "Label for a sound, e.g. humming"
   },
   "action-label-tooltip-aria": {
-    "defaultMessage": "Action tooltip",
-    "description": "Aria label for action tooltip icon"
+    "defaultMessage": "Sound tooltip",
+    "description": "Aria label for sonud tooltip icon"
   },
   "action-length-error": {
-    "defaultMessage": "Action names cannot be longer than {maxLen} characters.",
-    "description": "Error message shown when an action name is too long"
+    "defaultMessage": "Sound names cannot be longer than {maxLen} characters.",
+    "description": "Error message shown when a sound name is too long"
   },
   "action-name-placeholder": {
     "defaultMessage": "Name of sound",
     "description": "Placeholder text for user supplied name of a sound, e.g. humming"
   },
   "action-region": {
-    "defaultMessage": "Action \"{action}\"",
-    "description": "Region label for action row"
+    "defaultMessage": "Sound \"{action}\"",
+    "description": "Region label for sound row"
   },
   "action-tooltip": {
     "defaultMessage": "The type of sound you want {appNameFull} to recognise e.g. ‘humming’ or ‘whistling’.",
-    "description": "Tooltip explaining action"
+    "description": "Tooltip explaining sound"
   },
   "actions-label": {
-    "defaultMessage": "Actions",
-    "description": "Label for Actions"
+    "defaultMessage": "Sounds",
+    "description": "Label for Sounds"
   },
   "add-action-action": {
-    "defaultMessage": "Add action",
-    "description": "Button to add an action (sound related, e.g. humming)"
+    "defaultMessage": "Add sound",
+    "description": "Button to add an sound (sound related, e.g. humming)"
   },
   "ai-activity-timer-resource-title": {
     "defaultMessage": "AI activity timer",
@@ -105,10 +105,10 @@
   },
   "certainty-percentage-label": {
     "defaultMessage": "certainty for {action}: {currentConfidence} percent",
-    "description": "Label for certainty of an action"
+    "description": "Label for certainty of a sound"
   },
   "certainty-tooltip": {
-    "defaultMessage": "How confident the model is that you are currently doing each action.",
+    "defaultMessage": "How confident the model is that you are currently making each sound.",
     "description": "Tooltip for certainty column"
   },
   "click-to-reload-page-action": {
@@ -132,7 +132,7 @@
     "description": "Aria label for code tooltip icon"
   },
   "code-tooltip": {
-    "defaultMessage": "These are the MakeCode blocks for each detected action when you transfer your ML model and code to a micro:bit",
+    "defaultMessage": "These are the MakeCode blocks for each detected sound when you transfer your ML model and code to a micro:bit",
     "description": "Code column heading tooltip"
   },
   "confirm-action": {
@@ -141,7 +141,7 @@
   },
   "confirm-save-action": {
     "defaultMessage": "Confirm and save",
-    "description": "Confirm and save action label"
+    "description": "Confirm and save sound label"
   },
   "connect-action": {
     "defaultMessage": "Connect",
@@ -468,15 +468,15 @@
     "description": "Default project name"
   },
   "delete-action-aria": {
-    "defaultMessage": "Delete action \"{action}\"",
-    "description": "Aria label for action delete icon"
+    "defaultMessage": "Delete sound \"{action}\"",
+    "description": "Aria label for sound delete icon"
   },
   "delete-action-confirm-heading": {
-    "defaultMessage": "Confirm delete action",
+    "defaultMessage": "Confirm delete sound",
     "description": "Confirmation dialog heading"
   },
   "delete-action-confirm-text": {
-    "defaultMessage": "Are you sure you want to delete the action \"{action}\"?",
+    "defaultMessage": "Are you sure you want to delete the sound \"{action}\"?",
     "description": "Confirmation dialog text"
   },
   "delete-data-samples-action": {
@@ -492,12 +492,12 @@
     "description": "Confirmation dialog text"
   },
   "delete-recording-aria": {
-    "defaultMessage": "Delete recording {sample} of {numSamples} for action \"{action}\"",
-    "description": "Aria label for data sample delete action"
+    "defaultMessage": "Delete recording {sample} of {numSamples} for sound \"{action}\"",
+    "description": "Aria label for data sample delete sound"
   },
   "disconnect-action": {
     "defaultMessage": "Disconnect",
-    "description": "Disconnect (from bluetooth/radio) action"
+    "description": "Disconnect (from bluetooth/radio) sound"
   },
   "disconnected-during-recording": {
     "defaultMessage": "micro:bit disconnected during recording",
@@ -592,20 +592,20 @@
     "description": "Edit in MakeCode button text"
   },
   "estimated-action-aria": {
-    "defaultMessage": "Estimated action: \"{action}\"",
-    "description": "Aria live text for the current estimated action"
+    "defaultMessage": "Estimated sound: \"{action}\"",
+    "description": "Aria live text for the current estimated sound"
   },
   "estimated-action-label": {
-    "defaultMessage": "Estimated action",
-    "description": "Heading for estimated action area next to the live graph"
+    "defaultMessage": "Estimated sound",
+    "description": "Heading for estimated sound area next to the live graph"
   },
   "estimated-action-label-tooltip-aria": {
-    "defaultMessage": "Estimated action tooltip",
-    "description": "Aria label for estimated action tooltip icon"
+    "defaultMessage": "Estimated sound tooltip",
+    "description": "Aria label for estimated sound tooltip icon"
   },
   "estimated-action-tooltip": {
-    "defaultMessage": "This is the action the model thinks you are currently doing.",
-    "description": "Tooltip for the estimated action heading"
+    "defaultMessage": "This is the sound the model thinks you are currently doing.",
+    "description": "Tooltip for the estimated sound heading"
   },
   "feedback": {
     "defaultMessage": "Feedback",
@@ -920,7 +920,7 @@
     "description": "Incompatible device dialog subtitle"
   },
   "insufficient-data-body": {
-    "defaultMessage": "You need at least 3 data samples for 2 actions to train the model.",
+    "defaultMessage": "You need at least 3 data samples for 2 sounds to train the model.",
     "description": "Insufficient data modal content"
   },
   "insufficient-data-title": {
@@ -1180,8 +1180,8 @@
     "description": "Aria label for the additional actions menu to the right of the Edit in MakeCode button"
   },
   "name-action-hint": {
-    "defaultMessage": "Name an action you want the micro:bit to recognise",
-    "description": "Hint shown when you have an unnamed action"
+    "defaultMessage": "Name a sound you want the micro:bit to recognise",
+    "description": "Hint shown when you have an unnamed sound"
   },
   "name-project": {
     "defaultMessage": "Name your project",
@@ -1292,7 +1292,7 @@
     "description": "Blocks preview description text"
   },
   "open-shared-project-data-preview-description": {
-    "defaultMessage": "Preview of the actions and data contained within this project.",
+    "defaultMessage": "Preview of the sounds and data contained within this project.",
     "description": "Data preview description text"
   },
   "open-shared-project-description": {
@@ -1388,32 +1388,32 @@
     "description": "Record button text"
   },
   "record-action-aria": {
-    "defaultMessage": "Record data for action \"{action}\"",
+    "defaultMessage": "Record data for sound \"{action}\"",
     "description": "Aria label for record button"
   },
   "record-hint": {
     "defaultMessage": "Press to record a data sample.",
-    "description": "Hint when you have named the first action but not recorded any data samples"
+    "description": "Hint when you have named the first sound but not recorded any data samples"
   },
   "record-hint-button-b": {
     "defaultMessage": "Press to record a data sample or press button B on your data collection micro:bit.",
-    "description": "Hint when you have named the first action but not recorded any data samples and have a micro:bit connected"
+    "description": "Hint when you have named the first sound but not recorded any data samples and have a micro:bit connected"
   },
   "record-samples": {
     "defaultMessage": "Record {numSamples} samples",
-    "description": "Additional recording action text"
+    "description": "Additional recording sound text"
   },
   "record-samples-help": {
     "defaultMessage": "Each sample has its own countdown",
-    "description": "Help text for additional recording action"
+    "description": "Help text for additional recording sound"
   },
   "record-seconds": {
     "defaultMessage": "Record for {numSeconds} seconds",
-    "description": "Additional recording action text"
+    "description": "Additional recording sound text"
   },
   "record-seconds-help": {
     "defaultMessage": "make noise continuously to get {numSamples} samples",
-    "description": "Help text for additional recording action"
+    "description": "Help text for additional recording sound"
   },
   "recording": {
     "defaultMessage": "Recording",
@@ -1424,11 +1424,11 @@
     "description": "Text shown when data recording complete"
   },
   "recording-data-for": {
-    "defaultMessage": "Record data for action \"{action}\"",
+    "defaultMessage": "Record data for sound \"{action}\"",
     "description": "Text in recording dialog"
   },
   "recording-data-for-numbered": {
-    "defaultMessage": "Record {sample} of {numSamples} for action \"{action}\"",
+    "defaultMessage": "Record {sample} of {numSamples} for sound \"{action}\"",
     "description": "Text in recording dialog"
   },
   "recording-fingerprint-label": {
@@ -1440,7 +1440,7 @@
     "description": "Label for recording graph"
   },
   "recording-options-aria": {
-    "defaultMessage": "More recording options for action \"{action}\"",
+    "defaultMessage": "More recording options for sound \"{action}\"",
     "description": "Aria label for more recording options button"
   },
   "reload-action": {
@@ -1480,11 +1480,11 @@
     "description": "Heading for the dialog shown when saving a hex file"
   },
   "save-hex-dialog-message1": {
-    "defaultMessage": "The download contains your actions, data samples and your MakeCode project. Open it in {appNameFull} to continue working.",
+    "defaultMessage": "The download contains your sounds, data samples and your MakeCode project. Open it in {appNameFull} to continue working.",
     "description": "Text in the dialog shown when saving a hex file"
   },
   "save-hex-dialog-message2": {
-    "defaultMessage": "You can also open it with Microsoft MakeCode if you don't need to change the actions and data samples.",
+    "defaultMessage": "You can also open it with Microsoft MakeCode if you don't need to change the sounds and data samples.",
     "description": "Text in the dialog shown when saving a hex file"
   },
   "saving-description": {
@@ -1500,11 +1500,11 @@
     "description": "Notification after a hex file has been downloaded"
   },
   "select-icon-action-aria": {
-    "defaultMessage": "Pick icon for action \"{action}\"",
+    "defaultMessage": "Pick icon for sound \"{action}\"",
     "description": "Aria label for pick icon button"
   },
   "select-icon-action-untitled-aria": {
-    "defaultMessage": "Pick icon for untitled action",
+    "defaultMessage": "Pick icon for untitled sound",
     "description": "Aria label for pick icon button"
   },
   "select-icon-option-action-aria": {
@@ -1596,15 +1596,15 @@
     "description": "Button label that starts a tour of the app's features"
   },
   "tour-collect-addActions-content": {
-    "defaultMessage": "Decide what your other actions will be and what you will name them. You need at least 2 actions with 3 data samples to train the model. Your data samples are only stored on your computer, they do not get sent to anyone else.",
+    "defaultMessage": "Decide what your other sounds will be and what you will name them. You need at least 2 sounds with 3 data samples to train the model. Your data samples are only stored on your computer, they do not get sent to anyone else.",
     "description": "Tour step description"
   },
   "tour-collect-addActions-title": {
-    "defaultMessage": "Add more actions",
+    "defaultMessage": "Add more sounds",
     "description": "Tour step title"
   },
   "tour-collect-afterFirst-content": {
-    "defaultMessage": "To train the machine learning model you need at least 3 data samples for 2 different actions.",
+    "defaultMessage": "To train the machine learning model you need at least 3 data samples for 2 different sounds.",
     "description": "Tour step description"
   },
   "tour-collect-afterFirst-title": {
@@ -1616,11 +1616,11 @@
     "description": "Tour step description"
   },
   "tour-collect-collectMore-hasRecordings-content": {
-    "defaultMessage": "Record data samples for your actions.",
+    "defaultMessage": "Record data samples for your sounds.",
     "description": "Tour step description"
   },
   "tour-collect-collectMore-noRecordings-content": {
-    "defaultMessage": "Record more samples for this action.",
+    "defaultMessage": "Record more samples for this sound.",
     "description": "Tour step description"
   },
   "tour-collect-collectMore-title": {
@@ -1632,11 +1632,11 @@
     "description": "Tour step description"
   },
   "tour-dataSamples-actions-common-content": {
-    "defaultMessage": "An action is the type of audio you want the machine learning model to recognise e.g. ‘humming’ or ‘whistling’.",
+    "defaultMessage": "A sound is the type of audio you want the machine learning model to recognise e.g. ‘humming’ or ‘whistling’.",
     "description": "Tour step content"
   },
   "tour-dataSamples-actions-noRecordings-content": {
-    "defaultMessage": "Decide what your first action will be, name it and then start recording data samples.",
+    "defaultMessage": "Decide what your first sound will be, name it and then start recording data samples.",
     "description": "Tour step content"
   },
   "tour-dataSamples-connected-content": {
@@ -1672,7 +1672,7 @@
     "description": "Tour step title"
   },
   "tour-trainModel-afterTrain-content": {
-    "defaultMessage": "Now test your machine learning model. Try each action by moving your data collection micro:bit. Does the model correctly estimate each action?",
+    "defaultMessage": "Now test your machine learning model. Try each sound by making noise into your data collection micro:bit. Does the model correctly estimate each sound?",
     "description": "Tour step description"
   },
   "tour-trainModel-afterTrain-delayedUntilConnected-title": {
@@ -1680,7 +1680,7 @@
     "description": "Tour step title"
   },
   "tour-trainModel-certaintyRecognition-content": {
-    "defaultMessage": "The bar graph shows how confident the model is that you are doing each action. Move the slider to adjust the recognition point, or threshold.",
+    "defaultMessage": "The bar graph shows how confident the model is that you are making each sound. Move the slider to adjust the recognition point, or threshold.",
     "description": "Tour step description"
   },
   "tour-trainModel-certaintyRecognition-title": {
@@ -1692,11 +1692,11 @@
     "description": "Tour step description"
   },
   "tour-trainModel-estimatedAction-content": {
-    "defaultMessage": "The action the model estimates you are currently doing is shown below the micro:bit icon for that action.",
+    "defaultMessage": "The sound the model estimates you are currently doing is shown below the micro:bit icon for that sound.",
     "description": "Tour step description"
   },
   "tour-trainModel-makeCodeBlocks-content": {
-    "defaultMessage": "These MakeCode blocks will show icons for each action detected when you transfer your code and model to a micro:bit.",
+    "defaultMessage": "These MakeCode blocks will show icons for each sound detected when you transfer your code and model to a micro:bit.",
     "description": "Tour step description"
   },
   "tour-trainModel-makeCodeBlocks-title": {
@@ -1704,11 +1704,11 @@
     "description": "Tour step title"
   },
   "train-description": {
-    "defaultMessage": "The computer program spots patterns or differences in your data samples, and uses these to build a mathematical model that allows {appNameFull} to recognise different actions while your micro:bit listens.",
+    "defaultMessage": "The computer program spots patterns or differences in your data samples, and uses these to build a mathematical model that allows {appNameFull} to recognise different sounds while your micro:bit listens.",
     "description": "Explanation on training dialog"
   },
   "train-error-body": {
-    "defaultMessage": "The training did not result in a usable model. The reason for this is most likely the data used for training. If the data samples for different actions are too similar, this can result in issues in the training process.",
+    "defaultMessage": "The training did not result in a usable model. The reason for this is most likely the data used for training. If the data samples for different sounds are too similar, this can result in issues in the training process.",
     "description": "Training error dialog"
   },
   "train-error-header": {
