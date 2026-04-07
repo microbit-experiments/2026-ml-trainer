@@ -93,6 +93,7 @@ class MicroBitMicrophoneService : public MicroBitBLEService
     MicroBitAudio &audio;
 
     volatile bool streaming;
+    bool splListenerActive;
     uint16_t updatePeriodMs;
 
     // Keep the same DATA shape as accelerometer: X,Y,Z (16-bit each).

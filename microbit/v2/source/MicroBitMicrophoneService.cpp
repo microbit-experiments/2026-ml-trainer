@@ -42,6 +42,7 @@ const uint16_t MicroBitMicrophoneService::charUUID[mbbs_cIdxCOUNT] = {0xca4b, 0x
 MicroBitMicrophoneService::MicroBitMicrophoneService(BLEDevice &_ble, MicroBitAudio &_audio) :
     audio(_audio),
     streaming(false),
+    splListenerActive(false),
     updatePeriodMs(20)
 {
     dataCharacteristicBuffer[0] = 0;
@@ -117,8 +118,12 @@ void MicroBitMicrophoneService::listen(bool yes)
         if (streaming)
             return;
 
-        if (audio.levelSPL)
+        // Guard: only add listener once
+        if (audio.levelSPL && !splListenerActive)
+        {
             audio.levelSPL->listenerAdded();
+            splListenerActive = true;
+        }
 
         readXYZFromMicrophone();
         syncPeriodCharacteristic();
@@ -128,10 +133,17 @@ void MicroBitMicrophoneService::listen(bool yes)
     }
     else
     {
+        if (!streaming)
+            return;
+
         streaming = false;
 
-        if (audio.levelSPL)
+        // Guard: only remove listener if we own it
+        if (audio.levelSPL && splListenerActive)
+        {
             audio.levelSPL->listenerRemoved();
+            splListenerActive = false;
+        }
     }
 }
 
