@@ -8,7 +8,7 @@ import { HStack, usePrevious } from "@chakra-ui/react";
 import { useSize } from "@chakra-ui/react-use-size";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SmoothieChart, TimeSeries } from "@microbit/smoothie";
-import { microphoneReady } from "../microphone-ready";
+import { useMicrophoneReady } from "../microphone-ready";
 import { useConnectActions } from "../connect-actions-hooks";
 import { ConnectionStatus } from "../connect-status-hooks";
 import { useConnectionStage } from "../connection-stage-hooks";
@@ -31,7 +31,7 @@ const LiveGraph = () => {
   const connectActions = useConnectActions();
   const [{ microphoneUsed, graphColorScheme, graphLineScheme, graphLineWeight }] =
     useSettings();
-  const isMicrophoneReady = microphoneReady();
+  const isMicrophoneReady = useMicrophoneReady();
 
   const colors = useGraphColors(graphColorScheme);
   const lineStyles = useGraphLineStyles(graphLineScheme);

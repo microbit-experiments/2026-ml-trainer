@@ -18,7 +18,7 @@ import { TourTrigger } from "../model";
 import { useStore, useSettings } from "../store";
 import { userGuideUrl } from "../utils/external-links";
 import { createDataSamplesPageUrl, createTestingModelPageUrl } from "../urls";
-import { microphoneReady } from "../microphone-ready";
+import { useMicrophoneReady } from "../microphone-ready";
 
 interface HelpMenuItemsProps {
   onAboutDialogOpen: () => void;
@@ -135,7 +135,7 @@ const TourMenuItem = ({
 }: TourMenuItemProps) => {
   const tourStart = useStore((s) => s.tourStart);
   const [{ microphoneUsed }] = useSettings();
-  const isMicrophoneReady = microphoneReady();
+  const isMicrophoneReady = useMicrophoneReady();
   if (tourTrigger) {
     return (
       <MenuItem

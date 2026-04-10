@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useSettings, useStore } from "./store";
 import { useConnectionStage } from "./connection-stage-hooks";
 
-export const microphoneReady = (): boolean => {
+export const useMicrophoneReady = (): boolean => {
   const [{ microphoneUsed }] = useSettings();
   const { isConnected } = useConnectionStage();
   const hasMicrophonePermission = useStore((s) => s.microphonePermission) === "granted";

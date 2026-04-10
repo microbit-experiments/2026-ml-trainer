@@ -37,7 +37,7 @@ import { useStore } from "../store";
 import { tourElClassname } from "../tours";
 import { createDataSamplesPageUrl } from "../urls";
 import { ButtonWithLoading } from "../components/ButtonWithLoading";
-import { microphoneReady } from "../microphone-ready";
+import { useMicrophoneReady } from "../microphone-ready";
 
 const TestingModelPage = () => {
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ const TestingModelPage = () => {
   ]);
 
   const tourStart = useStore((s) => s.tourStart);
-  const isMicrophoneReady = microphoneReady();
+  const isMicrophoneReady = useMicrophoneReady();
   const wasMicrophoneReady = usePrevious(isMicrophoneReady);
   useEffect(() => {
     if (isMicrophoneReady) {

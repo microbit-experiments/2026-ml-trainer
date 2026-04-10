@@ -75,9 +75,7 @@ const ItemsRight = ({ menuItems, toolbarItems }: ItemsRightProps) => {
       <AllowMicrophoneAccessDialog
         isOpen={isAllowMicrophoneAccessTourDialogOpen}
         onClose={closeDialog}
-        onChooseConnect={() => setPostConnectTourTrigger(tourTrigger)}
         explanationTextId="allow-microphone-to-tour-body"
-        options={{ postConnectTourTrigger: tourTrigger }}
       />
       <AboutDialog isOpen={isAboutDialogOpen} onClose={closeDialog} />
       <HStack spacing={3} display={{ base: "none", lg: "flex" }}>

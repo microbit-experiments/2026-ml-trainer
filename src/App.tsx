@@ -209,8 +209,8 @@ const createRouter = () => {
 
 const App = () => {
   useEffect(() => {
-    if ("bluetooth" in navigator) {
-      (navigator as any).bluetooth
+    if (navigator.bluetooth) {
+      navigator.bluetooth
         .getAvailability()
         .then((bluetoothAvailable: boolean) => {
           logging.event({

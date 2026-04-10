@@ -40,7 +40,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { actionNameInputId } from "./ActionNameCard";
 import { recordButtonId } from "./ActionDataSamplesCard";
 import { keyboardShortcuts, useShortcut } from "../keyboard-shortcut-hooks";
-import { microphoneReady } from "../microphone-ready";
+import { useMicrophoneReady } from "../microphone-ready";
 import AllowMicrophoneAccessDialog from "./AllowMicrophoneAccessDialog";
 
 const gridCommonProps: Partial<GridProps> = {
@@ -106,7 +106,7 @@ const DataSamplesTable = ({
   const connection = useConnectActions();
   const { actions: connActions } = useConnectionStage();
   const { isConnected } = useConnectionStage();
-  const isMicrophoneReady = microphoneReady();
+  const isMicrophoneReady = useMicrophoneReady();
   const [{ microphoneUsed }] = useSettings();
   const loadProjectInputRef = useRef<LoadProjectInputRef>(null);
 

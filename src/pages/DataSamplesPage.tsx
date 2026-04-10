@@ -17,7 +17,7 @@ import DefaultPageLayout, {
 import LiveGraphPanel from "../components/LiveGraphPanel";
 import TrainModelDialogs from "../components/TrainModelFlowDialogs";
 import { keyboardShortcuts, useShortcut } from "../keyboard-shortcut-hooks";
-import { microphoneReady } from "../microphone-ready";
+import { useMicrophoneReady } from "../microphone-ready";
 import { useHasSufficientDataForTraining, useStore } from "../store";
 import { tourElClassname } from "../tours";
 import { createTestingModelPageUrl } from "../urls";
@@ -32,7 +32,7 @@ const DataSamplesPage = () => {
   const trainModelFlowStart = useStore((s) => s.trainModelFlowStart);
 
   const tourStart = useStore((s) => s.tourStart);
-  const isMicrophoneReady = microphoneReady();
+  const isMicrophoneReady = useMicrophoneReady();
 
   useEffect(() => {
     // If a user first connects on "Testing model" this can result in the tour when they return to the "Data samples" page.

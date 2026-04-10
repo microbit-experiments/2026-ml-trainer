@@ -17,26 +17,19 @@ import { ComponentProps, useCallback, useEffect, useState } from "react";
 import { FormattedMessage } from "react-intl";
 import { ConnectionStatus } from "../connect-status-hooks";
 import { useConnectionStage } from "../connection-stage-hooks";
-import { ConnectOptions } from "../store";
-import { ButtonWithLoading } from "./ButtonWithLoading";
 
 interface AllowMicrophoneAccessDialogProps
   extends Omit<ComponentProps<typeof Modal>, "children"> {
   explanationTextId: string;
-  onChooseConnect?: () => void;
-  options?: ConnectOptions;
 }
 
 const AllowMicrophoneAccessDialog = ({
   explanationTextId,
-  options,
   onClose,
-  onChooseConnect,
   isOpen,
   ...rest
 }: AllowMicrophoneAccessDialogProps) => {
   const {
-    actions,
     status: connStatus,
     isDialogOpen: isConnectionDialogOpen,
   } = useConnectionStage();
@@ -46,41 +39,6 @@ const AllowMicrophoneAccessDialog = ({
     setIsWaiting(false);
     onClose();
   }, [onClose]);
-
-  const handleConnect = useCallback(async () => {
-    onChooseConnect?.();
-    switch (connStatus) {
-      case ConnectionStatus.FailedToConnect:
-      case ConnectionStatus.FailedToReconnectTwice:
-      case ConnectionStatus.FailedToSelectBluetoothDevice:
-      case ConnectionStatus.NotConnected: {
-        // Start connection flow.
-        actions.startConnect(options);
-        return handleOnClose();
-      }
-      case ConnectionStatus.ConnectionLost:
-      case ConnectionStatus.FailedToReconnect:
-      case ConnectionStatus.Disconnected: {
-        // Reconnect.
-        await actions.reconnect();
-        return handleOnClose();
-      }
-      case ConnectionStatus.ReconnectingAutomatically: {
-        // Wait for reconnection to happen.
-        setIsWaiting(true);
-        return;
-      }
-      case ConnectionStatus.Connected: {
-        // Connected whilst dialog is up.
-        return handleOnClose();
-      }
-      case ConnectionStatus.ReconnectingExplicitly:
-      case ConnectionStatus.Connecting: {
-        // Impossible cases.
-        return handleOnClose();
-      }
-    }
-  }, [onChooseConnect, connStatus, actions, options, handleOnClose]);
 
   useEffect(() => {
     if (
