@@ -184,7 +184,7 @@ const RecordingDialog = ({
           position: "top",
           duration: 5_000,
           title: intl.formatMessage({
-            id: "disconnected-during-recording",
+            id: "error-during-recording",
           }),
           variant: "subtle",
           status: "error",

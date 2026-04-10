@@ -25,7 +25,7 @@ import { FormattedMessage, useIntl } from "react-intl";
 import { useConnectActions } from "../connect-actions-hooks";
 import { useConnectionStage } from "../connection-stage-hooks";
 import { ActionData } from "../model";
-import { useStore } from "../store";
+import { useStore, useSettings } from "../store";
 import ConnectFirstDialog from "./ConnectFirstDialog";
 import DataSamplesMenu from "./DataSamplesMenu";
 import DataSamplesTableRow from "./DataSamplesTableRow";
@@ -40,6 +40,8 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { actionNameInputId } from "./ActionNameCard";
 import { recordButtonId } from "./ActionDataSamplesCard";
 import { keyboardShortcuts, useShortcut } from "../keyboard-shortcut-hooks";
+import { microphoneReady } from "../microphone-ready";
+import AllowMicrophoneAccessDialog from "./AllowMicrophoneAccessDialog";
 
 const gridCommonProps: Partial<GridProps> = {
   gridTemplateColumns: "290px 1fr",
@@ -96,11 +98,16 @@ const DataSamplesTable = ({
   const connectToRecordDialogOnOpen = useStore(
     (s) => s.connectToRecordDialogOnOpen
   );
+  const isAllowMicrophoneAccessDialogOpen = useStore((s) => s.isAllowMicrophoneAccessDialogOpen);
+  const allowMicrophoneAccessDialogOnOpen = useStore((s) => s.allowMicrophoneAccessDialogOnOpen);
+
   const closeDialog = useStore((s) => s.closeDialog);
 
   const connection = useConnectActions();
   const { actions: connActions } = useConnectionStage();
   const { isConnected } = useConnectionStage();
+  const isMicrophoneReady = microphoneReady();
+  const [{ microphoneUsed }] = useSettings();
   const loadProjectInputRef = useRef<LoadProjectInputRef>(null);
 
   // For adding flashing animation for new recording.
@@ -131,9 +138,9 @@ const DataSamplesTable = ({
   const handleRecord = useCallback(
     (recordingOptions: RecordingOptions) => {
       setRecordingOptions(recordingOptions);
-      isConnected ? recordingDialogOnOpen() : connectToRecordDialogOnOpen();
+      isMicrophoneReady ? recordingDialogOnOpen() : microphoneUsed === "microbit" ? connectToRecordDialogOnOpen() : allowMicrophoneAccessDialogOnOpen();
     },
-    [connectToRecordDialogOnOpen, isConnected, recordingDialogOnOpen]
+    [microphoneUsed, allowMicrophoneAccessDialogOnOpen, connectToRecordDialogOnOpen, isMicrophoneReady, recordingDialogOnOpen]
   );
 
   const tourStart = useStore((s) => s.tourStart);
@@ -187,6 +194,11 @@ const DataSamplesTable = ({
         isOpen={isConnectToRecordDialogOpen}
         onClose={closeDialog}
         explanationTextId="connect-to-record-body"
+      />
+      <AllowMicrophoneAccessDialog
+        isOpen={isAllowMicrophoneAccessDialogOpen}
+        onClose={closeDialog}
+        explanationTextId="allow-microphone-to-record-body"
       />
       {selectedAction && (
         <>

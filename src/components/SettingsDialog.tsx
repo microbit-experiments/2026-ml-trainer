@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/modal";
 import {
   AspectRatio,
+  Divider,
   FormControl,
   FormHelperText,
   Text,
@@ -24,6 +25,7 @@ import { useCallback, useMemo } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import {
   defaultSettings,
+  microphoneUsedOptions,
   graphColorSchemeOptions,
   graphLineSchemeOptions,
   graphLineWeightOptions,
@@ -113,58 +115,84 @@ export const SettingsDialog = ({
               <FormattedMessage id="settings" />
             </ModalHeader>
             <ModalBody>
-              <VStack alignItems="flex-start" spacing={5}>
+              <VStack alignItems="flex-start">
+                <Text fontSize="sm" fontWeight="normal" color="gray.600" mt={3}>
+                  <FormattedMessage
+                    id="settings-recording"
+                  />
+                </Text>
+                <Divider />
                 <SelectFormControl
-                  id="graphLineColors"
-                  label={intl.formatMessage({ id: "graph-color-scheme" })}
-                  options={options.graphColorScheme}
-                  value={settings.graphColorScheme}
-                  onChange={(graphColorScheme) =>
+                  id="microphoneUsed"
+                  label={intl.formatMessage({ id: "microphone-used" })}
+                  options={createOptions(microphoneUsedOptions, "microphone-used", intl)}
+                  value={settings.microphoneUsed}
+                  onChange={(microphoneUsed) =>
                     setSettings({
                       ...settings,
-                      graphColorScheme,
+                      microphoneUsed,
                     })
                   }
                 />
-                <SelectFormControl
-                  id="graphLineScheme"
-                  label={intl.formatMessage({ id: "graph-line-scheme" })}
-                  options={options.graphLineScheme}
-                  value={settings.graphLineScheme}
-                  onChange={(graphLineScheme) =>
-                    setSettings({
-                      ...settings,
-                      graphLineScheme,
-                    })
-                  }
-                />
-                <SelectFormControl
-                  id="graphLineWeight"
-                  label={intl.formatMessage({ id: "graph-line-weight" })}
-                  options={options.graphLineWeight}
-                  value={settings.graphLineWeight}
-                  onChange={(graphLineWeight) =>
-                    setSettings({
-                      ...settings,
-                      graphLineWeight,
-                    })
-                  }
-                />
-                <VStack alignItems="flex-start" w="full">
-                  <Text>
-                    <FormattedMessage id="graph-preview" />
-                  </Text>
-                  <AspectRatio ratio={526 / 92} w="full">
-                    <RecordingGraph
-                      responsive
-                      data={previewGraphData}
-                      role="img"
-                      w="full"
-                      aria-label={intl.formatMessage({
-                        id: "recording-graph-label",
-                      })}
-                    />
-                  </AspectRatio>
+                <Text fontSize="sm" fontWeight="normal" color="gray.600" mt={6}>
+                  <FormattedMessage
+                    id="settings-graph"
+                  />
+                </Text>
+                <Divider />
+                <VStack alignItems="flex-start" w="full" spacing={5}>
+                  <SelectFormControl
+                    id="graphLineColors"
+                    label={intl.formatMessage({ id: "graph-color-scheme" })}
+                    options={options.graphColorScheme}
+                    value={settings.graphColorScheme}
+                    onChange={(graphColorScheme) =>
+                      setSettings({
+                        ...settings,
+                        graphColorScheme,
+                      })
+                    }
+                  />
+                  <SelectFormControl
+                    id="graphLineScheme"
+                    label={intl.formatMessage({ id: "graph-line-scheme" })}
+                    options={options.graphLineScheme}
+                    value={settings.graphLineScheme}
+                    onChange={(graphLineScheme) =>
+                      setSettings({
+                        ...settings,
+                        graphLineScheme,
+                      })
+                    }
+                  />
+                  <SelectFormControl
+                    id="graphLineWeight"
+                    label={intl.formatMessage({ id: "graph-line-weight" })}
+                    options={options.graphLineWeight}
+                    value={settings.graphLineWeight}
+                    onChange={(graphLineWeight) =>
+                      setSettings({
+                        ...settings,
+                        graphLineWeight,
+                      })
+                    }
+                  />
+                  <VStack alignItems="flex-start" w="full">
+                    <Text>
+                      <FormattedMessage id="graph-preview" />
+                    </Text>
+                    <AspectRatio ratio={526 / 92} w="full">
+                      <RecordingGraph
+                        responsive
+                        data={previewGraphData}
+                        role="img"
+                        w="full"
+                        aria-label={intl.formatMessage({
+                          id: "recording-graph-label",
+                        })}
+                      />
+                    </AspectRatio>
+                  </VStack>
                 </VStack>
                 <FormControl>
                   <Button variant="link" onClick={handleResetToDefault}>

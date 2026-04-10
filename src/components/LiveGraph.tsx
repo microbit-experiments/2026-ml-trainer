@@ -8,6 +8,7 @@ import { HStack, usePrevious } from "@chakra-ui/react";
 import { useSize } from "@chakra-ui/react-use-size";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SmoothieChart, TimeSeries } from "@microbit/smoothie";
+import { microphoneReady } from "../microphone-ready";
 import { useConnectActions } from "../connect-actions-hooks";
 import { ConnectionStatus } from "../connect-status-hooks";
 import { useConnectionStage } from "../connection-stage-hooks";
@@ -26,10 +27,11 @@ export const smoothenDataPoint = (curr: number, next: number) => {
 };
 
 const LiveGraph = () => {
-  const { isConnected, status } = useConnectionStage();
+  const { status } = useConnectionStage();
   const connectActions = useConnectActions();
-  const [{ graphColorScheme, graphLineScheme, graphLineWeight }] =
+  const [{ microphoneUsed, graphColorScheme, graphLineScheme, graphLineWeight }] =
     useSettings();
+  const isMicrophoneReady = microphoneReady();
 
   const colors = useGraphColors(graphColorScheme);
   const lineStyles = useGraphLineStyles(graphLineScheme);
@@ -111,12 +113,12 @@ const LiveGraph = () => {
   ]);
 
   useEffect(() => {
-    if (isConnected || status === ConnectionStatus.ReconnectingAutomatically) {
+    if (isMicrophoneReady || (status === ConnectionStatus.ReconnectingAutomatically && microphoneUsed === "microbit")) {
       chart?.start();
     } else {
       chart?.stop();
     }
-  }, [chart, isConnected, status]);
+  }, [chart, isMicrophoneReady, status, microphoneUsed]);
 
   // Draw on graph to display that users are recording.
   const isRecording = useStore((s) => s.isRecording);
@@ -142,6 +144,14 @@ const LiveGraph = () => {
   });
 
   useEffect(() => {
+    lineX.clear();
+    lineY.clear();
+    lineZ.clear();
+    recordLines.clear();
+    dataRef.current = { x: 0, y: 0, z: 0 };
+  }, [microphoneUsed, lineX, lineY, lineZ, recordLines]);
+
+  useEffect(() => {
     const listener = ({ data }: AudioXYZEvent) => {
       const t = new Date().getTime();
       dataRef.current = {
@@ -153,14 +163,14 @@ const LiveGraph = () => {
       lineY.append(t, dataRef.current.y, false);
       lineZ.append(t, dataRef.current.z, false);
     };
-    if (isConnected) {
+    if (isMicrophoneReady) {
       addAudioListener(listener);
     }
     return () => {
       removeAudioListener(listener);
     };
-  }, [connectActions, isConnected, lineX, lineY, lineZ]);
-
+  }, [connectActions, isMicrophoneReady, lineX, lineY, lineZ]);
+  
   return (
     <HStack
       ref={liveGraphContainerRef}
@@ -174,7 +184,6 @@ const LiveGraph = () => {
         id="smoothie-chart"
         width={width - 30}
       />
-      {isConnected}
     </HStack>
   );
 };

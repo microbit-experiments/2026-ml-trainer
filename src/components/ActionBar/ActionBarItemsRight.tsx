@@ -19,6 +19,7 @@ import { SettingsDialog } from "../SettingsDialog";
 import SettingsMenu from "../SettingsMenu";
 import SettingsMenuItem from "../SettingsMenuItem";
 import ToolbarMenu from "../ToolbarMenu";
+import AllowMicrophoneAccessDialog from "../AllowMicrophoneAccessDialog";
 
 interface ItemsRightProps {
   menuItems?: ReactNode;
@@ -37,6 +38,8 @@ const ItemsRight = ({ menuItems, toolbarItems }: ItemsRightProps) => {
   const feedbackOnOpen = useStore((s) => s.feedbackFormOnOpen);
   const connectFirstDialogOnOpen = useStore((s) => s.connectFirstDialogOnOpen);
   const isConnectFirstDialogOpen = useStore((s) => s.isConnectFirstDialogOpen);
+  const isAllowMicrophoneAccessTourDialogOpen = useStore((s) => s.isAllowMicrophoneAccessTourDialogOpen);
+  const allowMicrophoneAccessTourDialogOnOpen = useStore((s) => s.allowMicrophoneAccessTourDialogOnOpen);
   const setPostConnectTourTrigger = useStore(
     (s) => s.setPostConnectTourTrigger
   );
@@ -69,6 +72,13 @@ const ItemsRight = ({ menuItems, toolbarItems }: ItemsRightProps) => {
         explanationTextId="connect-to-tour-body"
         options={{ postConnectTourTrigger: tourTrigger }}
       />
+      <AllowMicrophoneAccessDialog
+        isOpen={isAllowMicrophoneAccessTourDialogOpen}
+        onClose={closeDialog}
+        onChooseConnect={() => setPostConnectTourTrigger(tourTrigger)}
+        explanationTextId="allow-microphone-to-tour-body"
+        options={{ postConnectTourTrigger: tourTrigger }}
+      />
       <AboutDialog isOpen={isAboutDialogOpen} onClose={closeDialog} />
       <HStack spacing={3} display={{ base: "none", lg: "flex" }}>
         {toolbarItems}
@@ -81,6 +91,7 @@ const ItemsRight = ({ menuItems, toolbarItems }: ItemsRightProps) => {
         display={{ base: "none", md: "block", lg: "block" }}
         onAboutDialogOpen={aboutDialogOnOpen}
         onConnectFirstDialogOpen={connectFirstDialogOnOpen}
+        onAllowMicrophoneAccessDialogOpen={allowMicrophoneAccessTourDialogOnOpen}
         onFeedbackOpen={feedbackOnOpen}
         tourTrigger={tourTrigger}
       />
@@ -106,6 +117,7 @@ const ItemsRight = ({ menuItems, toolbarItems }: ItemsRightProps) => {
         <HelpMenuItems
           onAboutDialogOpen={aboutDialogOnOpen}
           onConnectFirstDialogOpen={connectFirstDialogOnOpen}
+          onAllowMicrophoneAccessDialogOpen={allowMicrophoneAccessTourDialogOnOpen}
           onFeedbackOpen={feedbackOnOpen}
           tourTrigger={tourTrigger}
         />

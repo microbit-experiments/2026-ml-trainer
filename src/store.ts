@@ -223,6 +223,10 @@ export interface State {
   isNameProjectDialogOpen: boolean;
   isRecordingDialogOpen: boolean;
   isConnectToRecordDialogOpen: boolean;
+  isAllowMicrophoneAccessDialogOpen: boolean;
+  isAllowMicrophoneAccessTourDialogOpen: boolean;
+
+  microphonePermission: "unknown" | "granted" | "denied";
 }
 
 export interface ConnectOptions {
@@ -312,8 +316,12 @@ export interface Actions {
   incompatibleEditorDeviceDialogOnOpen(): void;
   recordingDialogOnOpen(): void;
   connectToRecordDialogOnOpen(): void;
+  allowMicrophoneAccessDialogOnOpen(): void;
+  allowMicrophoneAccessTourDialogOnOpen(): void;
   closeDialog(): void;
   isNonConnectionDialogOpen(): boolean;
+
+  setMicrophonePermission(permission: "unknown" | "granted" | "denied"): void;
 }
 
 type Store = State & Actions;
@@ -369,8 +377,15 @@ const createMlStore = (logging: Logging) => {
           isNameProjectDialogOpen: false,
           isRecordingDialogOpen: false,
           isConnectToRecordDialogOpen: false,
+          isAllowMicrophoneAccessDialogOpen: false,
+          isAllowMicrophoneAccessTourDialogOpen: false,
           isDeleteActionDialogOpen: false,
           isIncompatibleEditorDeviceDialogOpen: false,
+          microphonePermission: "unknown",
+
+          setMicrophonePermission(permission: "unknown" | "granted" | "denied") {
+            set({ microphonePermission: permission }, false, "setMicrophonePermission");
+          },
 
           setSettings(update: Partial<Settings>) {
             set(
@@ -1251,6 +1266,12 @@ const createMlStore = (logging: Logging) => {
           connectToRecordDialogOnOpen() {
             set({ isConnectToRecordDialogOpen: true });
           },
+          allowMicrophoneAccessDialogOnOpen() {
+            set({ isAllowMicrophoneAccessDialogOpen: true });
+          },
+          allowMicrophoneAccessTourDialogOnOpen() {
+            set({ isAllowMicrophoneAccessTourDialogOpen: true });
+          },
           deleteActionDialogOnOpen() {
             set({ isDeleteActionDialogOpen: true });
           },
@@ -1268,6 +1289,8 @@ const createMlStore = (logging: Logging) => {
               isNameProjectDialogOpen: false,
               isRecordingDialogOpen: false,
               isConnectToRecordDialogOpen: false,
+              isAllowMicrophoneAccessDialogOpen: false,
+              isAllowMicrophoneAccessTourDialogOpen: false,
               isDeleteActionDialogOpen: false,
               isIncompatibleEditorDeviceDialogOpen: false,
             });
@@ -1288,6 +1311,8 @@ const createMlStore = (logging: Logging) => {
               isDeleteAllActionsDialogOpen,
               isRecordingDialogOpen,
               isConnectToRecordDialogOpen,
+              isAllowMicrophoneAccessDialogOpen,
+              isAllowMicrophoneAccessTourDialogOpen,
               isDeleteActionDialogOpen,
               isIncompatibleEditorDeviceDialogOpen,
               save,
@@ -1301,6 +1326,8 @@ const createMlStore = (logging: Logging) => {
               isDeleteAllActionsDialogOpen ||
               isRecordingDialogOpen ||
               isConnectToRecordDialogOpen ||
+              isAllowMicrophoneAccessDialogOpen ||
+              isAllowMicrophoneAccessTourDialogOpen ||
               isDeleteActionDialogOpen ||
               isIncompatibleEditorDeviceDialogOpen ||
               postImportDialogState !== PostImportDialogState.None ||

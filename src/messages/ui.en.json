@@ -129,6 +129,30 @@
       "value": "AI storytelling friend"
     }
   ],
+  "allow-microphone-to-record": [
+    {
+      "type": 0,
+      "value": "Allow microphone access to record data samples"
+    }
+  ],
+  "allow-microphone-to-record-body": [
+    {
+      "type": 0,
+      "value": "Allow microphone access to record a data sample."
+    }
+  ],
+  "allow-microphone-to-test-model": [
+    {
+      "type": 0,
+      "value": "Allow microphone access to test your ML model"
+    }
+  ],
+  "allow-microphone-to-tour-body": [
+    {
+      "type": 0,
+      "value": "You need to allow microphone access to view the tour."
+    }
+  ],
   "back-action": [
     {
       "type": 0,
@@ -871,12 +895,6 @@
       "value": "Disconnect"
     }
   ],
-  "disconnected-during-recording": [
-    {
-      "type": 0,
-      "value": "micro:bit disconnected during recording"
-    }
-  ],
   "disconnected-warning-bluetooth-heading": [
     {
       "type": 0,
@@ -1015,6 +1033,12 @@
     {
       "type": 0,
       "value": "Edit in MakeCode"
+    }
+  ],
+  "error-during-recording": [
+    {
+      "type": 0,
+      "value": "An error occurred while recording"
     }
   ],
   "estimated-action-aria": [
@@ -1987,6 +2011,30 @@
       "value": "Your micro:bit is not connected"
     }
   ],
+  "microphone-access-blocked": [
+    {
+      "type": 0,
+      "value": "Microphone access blocked"
+    }
+  ],
+  "microphone-used": [
+    {
+      "type": 0,
+      "value": "Microphone used"
+    }
+  ],
+  "microphone-used-device": [
+    {
+      "type": 0,
+      "value": "Your device"
+    }
+  ],
+  "microphone-used-microbit": [
+    {
+      "type": 0,
+      "value": "micro:bit"
+    }
+  ],
   "ml.onStart|block": [
     {
       "type": 0,
@@ -2667,10 +2715,22 @@
       "value": "Settings"
     }
   ],
+  "settings-graph": [
+    {
+      "type": 0,
+      "value": "Graph"
+    }
+  ],
   "settings-menu-action": [
     {
       "type": 0,
       "value": "Settings actions menu"
+    }
+  ],
+  "settings-recording": [
+    {
+      "type": 0,
+      "value": "Recording"
     }
   ],
   "show-graphs-checkbox-label-text": [

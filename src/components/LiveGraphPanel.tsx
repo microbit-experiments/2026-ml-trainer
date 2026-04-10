@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: MIT
  */
 import {
+  Box,
   BoxProps,
   Button,
   HStack,
@@ -16,6 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { useCallback, useRef } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
+import { MdMicOff } from "react-icons/md";
 import { ConnectionStatus } from "../connect-status-hooks";
 import { useConnectionStage } from "../connection-stage-hooks";
 import microbitImage from "../images/stylised-microbit-black.svg";
@@ -26,10 +28,12 @@ import AlertIcon from "./AlertIcon";
 import InfoToolTip from "./InfoToolTip";
 import LiveGraph from "./LiveGraph";
 import PredictedAction from "./PredictedAction";
+import { useSettings, useStore } from "../store";
 
 interface LiveGraphPanelProps {
   showPredictedAction?: boolean;
   disconnectedTextId: string;
+  noPermissionTextId: string;
 }
 
 export const predictedActionDisplayWidth = 180;
@@ -37,16 +41,22 @@ export const predictedActionDisplayWidth = 180;
 const LiveGraphPanel = ({
   showPredictedAction,
   disconnectedTextId,
+  noPermissionTextId,
 }: LiveGraphPanelProps) => {
   const { actions, status, isConnected } = useConnectionStage();
   const parentPortalRef = useRef(null);
   const logging = useLogging();
+  const [{ microphoneUsed }] = useSettings();
   const isReconnecting =
     status === ConnectionStatus.ReconnectingAutomatically ||
     status === ConnectionStatus.ReconnectingExplicitly;
 
   const isDisconnected =
     !isConnected && !isReconnecting && status !== ConnectionStatus.Connecting;
+
+
+  const microphonePermission = useStore((s) => s.microphonePermission);
+  const microphoneDisabled = (isDisconnected && microphoneUsed === "microbit") || (microphonePermission !== "granted" && microphoneUsed === "device");
 
   const handleConnectOrReconnect = useCallback(() => {
     if (
@@ -87,7 +97,7 @@ const LiveGraphPanel = ({
       bgColor="white"
       className={tourElClassname.liveGraph}
     >
-      {isDisconnected && (
+      {isDisconnected && microphoneUsed === "microbit" && (
         <HStack
           position="absolute"
           w="100%"
@@ -116,10 +126,32 @@ const LiveGraphPanel = ({
           </VStack>
         </HStack>
       )}
+      {microphonePermission === "denied" && microphoneUsed === "device" && (
+        <HStack
+          position="absolute"
+          w="100%"
+          h="100%"
+          gap={10}
+          justifyContent="center"
+          zIndex={1}
+        >
+          <MutedMicrophoneIllustration
+            display={{ base: "none", sm: "grid" }}
+          />
+          <VStack gap={3} alignItems="self-start">
+            <Text fontWeight="bold">
+              <FormattedMessage id="microphone-access-blocked" />
+            </Text>
+            <Text>
+              <FormattedMessage id={noPermissionTextId} />
+            </Text>
+          </VStack>
+        </HStack>
+      )}
       <HStack
         ref={parentPortalRef}
-        pointerEvents={isDisconnected ? "none" : undefined}
-        opacity={isDisconnected ? 0.2 : undefined}
+        pointerEvents={microphoneDisabled ? "none" : undefined}
+        opacity={microphoneDisabled ? 0 : undefined}
       >
         <Portal containerRef={parentPortalRef}>
           <HStack
@@ -141,10 +173,10 @@ const LiveGraphPanel = ({
                 <InfoToolTip
                   titleId="live-graph"
                   descriptionId="live-graph-tooltip"
-                  isDisabled={isDisconnected}
+                  isDisabled={microphoneDisabled}
                 />
               </HStack>
-              {isConnected && (
+              {isConnected && microphoneUsed === "microbit" && (
                 <Button
                   backgroundColor="white"
                   variant="secondary"
@@ -183,6 +215,16 @@ const MicrobitWarningIllustration = (props: BoxProps) => (
       boxSize="55px"
     />
   </HStack>
+);
+
+const MutedMicrophoneIllustration = (props: BoxProps) => (
+  <Box
+    boxSize="120px"
+    placeItems="center"
+    {...props}
+  >
+    <Icon as={MdMicOff} boxSize="64px" color="#676767" />
+  </Box>
 );
 
 export default LiveGraphPanel;

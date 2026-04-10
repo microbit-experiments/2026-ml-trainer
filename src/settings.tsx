@@ -285,10 +285,14 @@ export const defaultSettings: Settings = {
   toursCompleted: [],
   dataSamplesView: DataSamplesView.Graph,
   showGraphs: true,
+  microphoneUsed: "device",
   graphColorScheme: "default",
   graphLineScheme: "solid",
   graphLineWeight: "default",
 };
+
+export type MicrophoneUsed = "device" | "microbit";
+export const microphoneUsedOptions: MicrophoneUsed[] = ["device", "microbit"];
 
 export type GraphColorScheme = "default" | "color-blind-1" | "color-blind-2";
 export const graphColorSchemeOptions: GraphColorScheme[] = [
@@ -314,6 +318,7 @@ export interface Settings {
   toursCompleted: TourTriggerName[];
   dataSamplesView: DataSamplesView;
   showGraphs: boolean;
+  microphoneUsed: MicrophoneUsed;
   graphColorScheme: GraphColorScheme;
   graphLineScheme: GraphLineScheme;
   graphLineWeight: GraphLineWeight;

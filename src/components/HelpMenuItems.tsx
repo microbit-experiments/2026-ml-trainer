@@ -12,23 +12,25 @@ import {
   RiInformationLine,
 } from "react-icons/ri";
 import { FormattedMessage } from "react-intl";
-import { useConnectionStage } from "../connection-stage-hooks";
 import { useDeployment } from "../deployment";
 import { flags } from "../flags";
 import { TourTrigger } from "../model";
-import { useStore } from "../store";
+import { useStore, useSettings } from "../store";
 import { userGuideUrl } from "../utils/external-links";
 import { createDataSamplesPageUrl, createTestingModelPageUrl } from "../urls";
+import { microphoneReady } from "../microphone-ready";
 
 interface HelpMenuItemsProps {
   onAboutDialogOpen: () => void;
   onConnectFirstDialogOpen: () => void;
+  onAllowMicrophoneAccessDialogOpen: () => void;
   onFeedbackOpen: () => void;
   tourTrigger: TourTrigger | undefined;
 }
 const HelpMenuItems = ({
   onAboutDialogOpen,
   onConnectFirstDialogOpen,
+  onAllowMicrophoneAccessDialogOpen,
   onFeedbackOpen,
   tourTrigger,
 }: HelpMenuItemsProps) => {
@@ -48,6 +50,7 @@ const HelpMenuItems = ({
       )}
       <TourMenuItem
         onConnectFirstDialogOpen={onConnectFirstDialogOpen}
+        onAllowMicrophoneAccessDialogOpen={onAllowMicrophoneAccessDialogOpen}
         tourTrigger={tourTrigger}
       />
       {deployment.supportLinks.main && (
@@ -121,21 +124,28 @@ const HelpMenuItems = ({
 
 interface TourMenuItemProps {
   onConnectFirstDialogOpen: () => void;
+  onAllowMicrophoneAccessDialogOpen: () => void;
   tourTrigger: TourTrigger | undefined;
 }
 
 const TourMenuItem = ({
   onConnectFirstDialogOpen,
+  onAllowMicrophoneAccessDialogOpen,
   tourTrigger,
 }: TourMenuItemProps) => {
   const tourStart = useStore((s) => s.tourStart);
-  const { isConnected } = useConnectionStage();
+  const [{ microphoneUsed }] = useSettings();
+  const isMicrophoneReady = microphoneReady();
   if (tourTrigger) {
     return (
       <MenuItem
         onClick={() => {
-          if (!isConnected) {
-            onConnectFirstDialogOpen();
+          if (!isMicrophoneReady) {
+            if (microphoneUsed === "microbit") {
+              onConnectFirstDialogOpen();
+            } else {
+              onAllowMicrophoneAccessDialogOpen();
+            }
           } else {
             tourStart(tourTrigger, true);
           }

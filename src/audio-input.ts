@@ -1,5 +1,6 @@
 //Emits audio data from the computer microphone
 
+import { useStore } from "./store";
 import { splitAudioToXYZ } from "./audio-to-xyz";
 
 const SAMPLE_RATE = 8000;
@@ -30,6 +31,8 @@ export const XYZStream = (x: number, y: number, z: number) => {
   audioListeners.forEach((listener) => listener(event));
 };
 
+export type MicrophonePermissionState = "unknown" | "granted" | "denied";
+
 export const startAudioStream = (): (() => void) => {
   let isActive = true;
   let audioStream: MediaStream | null = null;
@@ -41,6 +44,7 @@ export const startAudioStream = (): (() => void) => {
     try {
       // Get microphone access
       audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      useStore.getState().setMicrophonePermission("granted");
 
       // Safely create AudioContext
       const AudioContextClass = window.AudioContext;
@@ -99,6 +103,7 @@ export const startAudioStream = (): (() => void) => {
       console.log("Audio stream started");
     } catch (error) {
       console.error("Audio stream setup failed:", error);
+      useStore.getState().setMicrophonePermission("denied");
     }
   };
 

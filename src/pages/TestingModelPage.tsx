@@ -31,13 +31,13 @@ import LiveGraphPanel from "../components/LiveGraphPanel";
 import MoreMenuButton from "../components/MoreMenuButton";
 import TestingModelTable from "../components/TestingModelTable";
 import { useConnectActions } from "../connect-actions-hooks";
-import { useConnectionStage } from "../connection-stage-hooks";
 import { useProject } from "../hooks/project-hooks";
 import { keyboardShortcuts, useShortcut } from "../keyboard-shortcut-hooks";
 import { useStore } from "../store";
 import { tourElClassname } from "../tours";
 import { createDataSamplesPageUrl } from "../urls";
 import { ButtonWithLoading } from "../components/ButtonWithLoading";
+import { microphoneReady } from "../microphone-ready";
 
 const TestingModelPage = () => {
   const navigate = useNavigate();
@@ -69,16 +69,16 @@ const TestingModelPage = () => {
   ]);
 
   const tourStart = useStore((s) => s.tourStart);
-  const { isConnected } = useConnectionStage();
-  const wasConnected = usePrevious(isConnected);
+  const isMicrophoneReady = microphoneReady();
+  const wasMicrophoneReady = usePrevious(isMicrophoneReady);
   useEffect(() => {
-    if (isConnected) {
+    if (isMicrophoneReady) {
       tourStart(
-        { name: "TrainModel", delayedUntilConnection: wasConnected === false },
+        { name: "TrainModel", delayedUntilConnection: wasMicrophoneReady === false },
         false
       );
     }
-  }, [isConnected, tourStart, wasConnected]);
+  }, [isMicrophoneReady, tourStart, wasMicrophoneReady]);
 
   const { openEditor, resetProject, projectEdited } = useProject();
   const { getDataCollectionBoardVersion } = useConnectActions();
@@ -187,6 +187,7 @@ const TestingModelPage = () => {
         <LiveGraphPanel
           showPredictedAction
           disconnectedTextId="connect-to-test-model"
+          noPermissionTextId="allow-microphone-to-test-model"
         />
       </VStack>
     </DefaultPageLayout>

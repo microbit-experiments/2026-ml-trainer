@@ -21,6 +21,7 @@ import { TourTrigger } from "../model";
 interface HelpMenuProps extends BoxProps {
   onAboutDialogOpen: () => void;
   onConnectFirstDialogOpen: () => void;
+  onAllowMicrophoneAccessDialogOpen: () => void;
   onFeedbackOpen: () => void;
   tourTrigger: TourTrigger | undefined;
 }
@@ -31,6 +32,7 @@ interface HelpMenuProps extends BoxProps {
 const HelpMenu = ({
   onAboutDialogOpen,
   onConnectFirstDialogOpen,
+  onAllowMicrophoneAccessDialogOpen,
   onFeedbackOpen,
   tourTrigger,
   ...rest
@@ -62,6 +64,7 @@ const HelpMenu = ({
             <HelpMenuItems
               onAboutDialogOpen={onAboutDialogOpen}
               onConnectFirstDialogOpen={onConnectFirstDialogOpen}
+              onAllowMicrophoneAccessDialogOpen={onAllowMicrophoneAccessDialogOpen}
               onFeedbackOpen={onFeedbackOpen}
               tourTrigger={tourTrigger}
             />

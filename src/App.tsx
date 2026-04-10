@@ -19,6 +19,7 @@ import {
   Outlet,
   RouterProvider,
   ScrollRestoration,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 import "theme-package/fonts/fonts.css";
@@ -91,11 +92,7 @@ const Providers = ({ children }: ProviderLayoutProps) => {
             <TranslationProvider>
               <ConnectStatusProvider>
                 <ConnectProvider {...{ usb, bluetooth, radioBridge }}>
-                  <BufferedDataProvider>
-                    <ConnectionStageProvider>
-                      {children}
-                    </ConnectionStageProvider>
-                  </BufferedDataProvider>
+                  <ConnectionStageProvider>{children}</ConnectionStageProvider>
                 </ConnectProvider>
               </ConnectStatusProvider>
             </TranslationProvider>
@@ -110,8 +107,12 @@ const Layout = () => {
   const driverRef = useRef<MakeCodeFrameDriver>(null);
   const setPostImportDialogState = useStore((s) => s.setPostImportDialogState);
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const intl = useIntl();
+  const isBufferedDataEnabled =
+    location.pathname === createDataSamplesPageUrl() ||
+    location.pathname === createTestingModelPageUrl();
 
   useEffect(() => {
     return useStore.subscribe(
@@ -142,8 +143,10 @@ const Layout = () => {
     <ErrorBoundary>
       <ScrollRestoration />
       <ProjectProvider driverRef={driverRef}>
-        <EditCodeDialog ref={driverRef} />
-        <Outlet />
+        <BufferedDataProvider enabled={isBufferedDataEnabled}>
+          <EditCodeDialog ref={driverRef} />
+          <Outlet />
+        </BufferedDataProvider>
       </ProjectProvider>
     </ErrorBoundary>
   );
@@ -206,10 +209,10 @@ const createRouter = () => {
 
 const App = () => {
   useEffect(() => {
-    if (navigator.bluetooth) {
-      navigator.bluetooth
+    if ("bluetooth" in navigator) {
+      (navigator as any).bluetooth
         .getAvailability()
-        .then((bluetoothAvailable) => {
+        .then((bluetoothAvailable: boolean) => {
           logging.event({
             type: "boot",
             detail: {
@@ -217,7 +220,7 @@ const App = () => {
             },
           });
         })
-        .catch((err) => {
+        .catch((err: Error) => {
           logging.error(err);
         });
     } else {

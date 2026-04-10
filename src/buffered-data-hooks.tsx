@@ -15,7 +15,7 @@ import {
 import { BufferedData } from "./buffered-data";
 //import { useConnectActions } from "./connect-actions-hooks";
 import { ConnectionStatus, useConnectStatus } from "./connect-status-hooks";
-import { useStore } from "./store";
+import { useSettings, useStore } from "./store";
 import {
   addAudioListener,
   removeAudioListener,
@@ -27,10 +27,14 @@ const BufferedDataContext = createContext<BufferedData | null>(null);
 
 interface ConnectProviderProps {
   children: ReactNode;
+  enabled?: boolean;
 }
 
-export const BufferedDataProvider = ({ children }: ConnectProviderProps) => {
-  const bufferedData = useBufferedDataInternal();
+export const BufferedDataProvider = ({
+  children,
+  enabled = true,
+}: ConnectProviderProps) => {
+  const bufferedData = useBufferedDataInternal(enabled);
   return (
     <BufferedDataContext.Provider value={bufferedData}>
       {children}
@@ -46,8 +50,10 @@ export const useBufferedData = (): BufferedData => {
   return value;
 };
 
-const useBufferedDataInternal = (): BufferedData => {
+const useBufferedDataInternal = (enabled: boolean): BufferedData => {
   const [connectStatus] = useConnectStatus();
+  const [{ microphoneUsed }] = useSettings();
+  const microphonePermission = useStore((s) => s.microphonePermission);
   //const connection = useConnectActions();
   const dataWindow = useStore((s) => s.dataWindow);
   const bufferRef = useRef<BufferedData>();
@@ -59,24 +65,29 @@ const useBufferedDataInternal = (): BufferedData => {
     return bufferRef.current;
   }, [dataWindow.minSamples]);
   useEffect(() => {
-    if (connectStatus !== ConnectionStatus.Connected) {
+    if (
+      !enabled ||
+      (microphoneUsed == "microbit" && connectStatus !== ConnectionStatus.Connected)
+    ) {
       return;
     }
-
-    // Start audio capture
-    const cleanup = startAudioStream();
 
     // Subscribe to audio data and add samples to buffer
     const listener = (e: AudioXYZEvent) => {
       const { x, y, z } = e.data;
       getBuffer().addSample({ x, y, z }, Date.now());
     };
-    addAudioListener(listener);
 
-    return () => {
-      cleanup();
-      removeAudioListener(listener);
-    };
-  }, [connectStatus, getBuffer]);
+    if (microphoneUsed === "device") {
+      // Start audio capture
+      const cleanup = startAudioStream();
+      addAudioListener(listener);
+
+      return () => {
+        cleanup();
+        removeAudioListener(listener);
+      };
+    }
+  }, [connectStatus, enabled, getBuffer, microphoneUsed, microphonePermission]);
   return getBuffer();
 };

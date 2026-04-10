@@ -16,8 +16,8 @@ import DefaultPageLayout, {
 } from "../components/DefaultPageLayout";
 import LiveGraphPanel from "../components/LiveGraphPanel";
 import TrainModelDialogs from "../components/TrainModelFlowDialogs";
-import { useConnectionStage } from "../connection-stage-hooks";
 import { keyboardShortcuts, useShortcut } from "../keyboard-shortcut-hooks";
+import { microphoneReady } from "../microphone-ready";
 import { useHasSufficientDataForTraining, useStore } from "../store";
 import { tourElClassname } from "../tours";
 import { createTestingModelPageUrl } from "../urls";
@@ -32,13 +32,14 @@ const DataSamplesPage = () => {
   const trainModelFlowStart = useStore((s) => s.trainModelFlowStart);
 
   const tourStart = useStore((s) => s.tourStart);
-  const { isConnected } = useConnectionStage();
+  const isMicrophoneReady = microphoneReady();
+
   useEffect(() => {
     // If a user first connects on "Testing model" this can result in the tour when they return to the "Data samples" page.
-    if (isConnected) {
+    if (isMicrophoneReady) {
       tourStart({ name: "Connect" }, false);
     }
-  }, [isConnected, tourStart]);
+  }, [isMicrophoneReady, tourStart]);
 
   const hasSufficientData = useHasSufficientDataForTraining();
   const isAddNewActionDisabled = actions.some((a) => a.name.length === 0);
@@ -119,7 +120,7 @@ const DataSamplesPage = () => {
               )}
             </HStack>
           </HStack>
-          <LiveGraphPanel disconnectedTextId="connect-to-record" />
+          <LiveGraphPanel disconnectedTextId="connect-to-record" noPermissionTextId="allow-microphone-to-record" />
         </VStack>
       </DefaultPageLayout>
     </>
