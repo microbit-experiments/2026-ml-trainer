@@ -38,8 +38,12 @@ const ItemsRight = ({ menuItems, toolbarItems }: ItemsRightProps) => {
   const feedbackOnOpen = useStore((s) => s.feedbackFormOnOpen);
   const connectFirstDialogOnOpen = useStore((s) => s.connectFirstDialogOnOpen);
   const isConnectFirstDialogOpen = useStore((s) => s.isConnectFirstDialogOpen);
-  const isAllowMicrophoneAccessTourDialogOpen = useStore((s) => s.isAllowMicrophoneAccessTourDialogOpen);
-  const allowMicrophoneAccessTourDialogOnOpen = useStore((s) => s.allowMicrophoneAccessTourDialogOnOpen);
+  const isAllowMicrophoneAccessTourDialogOpen = useStore(
+    (s) => s.isAllowMicrophoneAccessTourDialogOpen
+  );
+  const allowMicrophoneAccessTourDialogOnOpen = useStore(
+    (s) => s.allowMicrophoneAccessTourDialogOnOpen
+  );
   const setPostConnectTourTrigger = useStore(
     (s) => s.setPostConnectTourTrigger
   );
@@ -89,7 +93,9 @@ const ItemsRight = ({ menuItems, toolbarItems }: ItemsRightProps) => {
         display={{ base: "none", md: "block", lg: "block" }}
         onAboutDialogOpen={aboutDialogOnOpen}
         onConnectFirstDialogOpen={connectFirstDialogOnOpen}
-        onAllowMicrophoneAccessDialogOpen={allowMicrophoneAccessTourDialogOnOpen}
+        onAllowMicrophoneAccessDialogOpen={
+          allowMicrophoneAccessTourDialogOnOpen
+        }
         onFeedbackOpen={feedbackOnOpen}
         tourTrigger={tourTrigger}
       />
@@ -115,7 +121,9 @@ const ItemsRight = ({ menuItems, toolbarItems }: ItemsRightProps) => {
         <HelpMenuItems
           onAboutDialogOpen={aboutDialogOnOpen}
           onConnectFirstDialogOpen={connectFirstDialogOnOpen}
-          onAllowMicrophoneAccessDialogOpen={allowMicrophoneAccessTourDialogOnOpen}
+          onAllowMicrophoneAccessDialogOpen={
+            allowMicrophoneAccessTourDialogOnOpen
+          }
           onFeedbackOpen={feedbackOnOpen}
           tourTrigger={tourTrigger}
         />

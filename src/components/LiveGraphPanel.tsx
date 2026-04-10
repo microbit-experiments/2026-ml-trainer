@@ -54,9 +54,10 @@ const LiveGraphPanel = ({
   const isDisconnected =
     !isConnected && !isReconnecting && status !== ConnectionStatus.Connecting;
 
-
   const microphonePermission = useStore((s) => s.microphonePermission);
-  const microphoneDisabled = (isDisconnected && microphoneUsed === "microbit") || (microphonePermission !== "granted" && microphoneUsed === "device");
+  const microphoneDisabled =
+    (isDisconnected && microphoneUsed === "microbit") ||
+    (microphonePermission !== "granted" && microphoneUsed === "device");
 
   const handleConnectOrReconnect = useCallback(() => {
     if (
@@ -135,9 +136,7 @@ const LiveGraphPanel = ({
           justifyContent="center"
           zIndex={1}
         >
-          <MutedMicrophoneIllustration
-            display={{ base: "none", sm: "grid" }}
-          />
+          <MutedMicrophoneIllustration display={{ base: "none", sm: "grid" }} />
           <VStack gap={3} alignItems="self-start">
             <Text fontWeight="bold">
               <FormattedMessage id="microphone-access-blocked" />
@@ -218,11 +217,7 @@ const MicrobitWarningIllustration = (props: BoxProps) => (
 );
 
 const MutedMicrophoneIllustration = (props: BoxProps) => (
-  <Box
-    boxSize="120px"
-    placeItems="center"
-    {...props}
-  >
+  <Box boxSize="120px" placeItems="center" {...props}>
     <Icon as={MdMicOff} boxSize="64px" color="#676767" />
   </Box>
 );

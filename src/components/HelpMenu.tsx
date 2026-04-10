@@ -64,7 +64,9 @@ const HelpMenu = ({
             <HelpMenuItems
               onAboutDialogOpen={onAboutDialogOpen}
               onConnectFirstDialogOpen={onConnectFirstDialogOpen}
-              onAllowMicrophoneAccessDialogOpen={onAllowMicrophoneAccessDialogOpen}
+              onAllowMicrophoneAccessDialogOpen={
+                onAllowMicrophoneAccessDialogOpen
+              }
               onFeedbackOpen={onFeedbackOpen}
               tourTrigger={tourTrigger}
             />

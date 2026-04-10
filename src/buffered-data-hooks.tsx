@@ -67,7 +67,8 @@ const useBufferedDataInternal = (enabled: boolean): BufferedData => {
   useEffect(() => {
     if (
       !enabled ||
-      (microphoneUsed == "microbit" && connectStatus !== ConnectionStatus.Connected)
+      (microphoneUsed == "microbit" &&
+        connectStatus !== ConnectionStatus.Connected)
     ) {
       return;
     }

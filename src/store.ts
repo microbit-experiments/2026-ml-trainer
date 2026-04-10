@@ -383,8 +383,14 @@ const createMlStore = (logging: Logging) => {
           isIncompatibleEditorDeviceDialogOpen: false,
           microphonePermission: "unknown",
 
-          setMicrophonePermission(permission: "unknown" | "granted" | "denied") {
-            set({ microphonePermission: permission }, false, "setMicrophonePermission");
+          setMicrophonePermission(
+            permission: "unknown" | "granted" | "denied"
+          ) {
+            set(
+              { microphonePermission: permission },
+              false,
+              "setMicrophonePermission"
+            );
           },
 
           setSettings(update: Partial<Settings>) {

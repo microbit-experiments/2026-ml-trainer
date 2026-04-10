@@ -29,10 +29,8 @@ const AllowMicrophoneAccessDialog = ({
   isOpen,
   ...rest
 }: AllowMicrophoneAccessDialogProps) => {
-  const {
-    status: connStatus,
-    isDialogOpen: isConnectionDialogOpen,
-  } = useConnectionStage();
+  const { status: connStatus, isDialogOpen: isConnectionDialogOpen } =
+    useConnectionStage();
   const [isWaiting, setIsWaiting] = useState<boolean>(false);
 
   const handleOnClose = useCallback(() => {
@@ -81,8 +79,7 @@ const AllowMicrophoneAccessDialog = ({
               <FormattedMessage id={explanationTextId} />
             </Text>
           </ModalBody>
-          <ModalFooter justifyContent="flex-end">
-          </ModalFooter>
+          <ModalFooter justifyContent="flex-end"></ModalFooter>
         </ModalContent>
       </ModalOverlay>
     </Modal>

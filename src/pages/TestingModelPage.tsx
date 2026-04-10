@@ -74,7 +74,10 @@ const TestingModelPage = () => {
   useEffect(() => {
     if (isMicrophoneReady) {
       tourStart(
-        { name: "TrainModel", delayedUntilConnection: wasMicrophoneReady === false },
+        {
+          name: "TrainModel",
+          delayedUntilConnection: wasMicrophoneReady === false,
+        },
         false
       );
     }

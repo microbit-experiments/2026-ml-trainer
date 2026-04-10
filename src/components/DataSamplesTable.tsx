@@ -98,8 +98,12 @@ const DataSamplesTable = ({
   const connectToRecordDialogOnOpen = useStore(
     (s) => s.connectToRecordDialogOnOpen
   );
-  const isAllowMicrophoneAccessDialogOpen = useStore((s) => s.isAllowMicrophoneAccessDialogOpen);
-  const allowMicrophoneAccessDialogOnOpen = useStore((s) => s.allowMicrophoneAccessDialogOnOpen);
+  const isAllowMicrophoneAccessDialogOpen = useStore(
+    (s) => s.isAllowMicrophoneAccessDialogOpen
+  );
+  const allowMicrophoneAccessDialogOnOpen = useStore(
+    (s) => s.allowMicrophoneAccessDialogOnOpen
+  );
 
   const closeDialog = useStore((s) => s.closeDialog);
 
@@ -138,9 +142,19 @@ const DataSamplesTable = ({
   const handleRecord = useCallback(
     (recordingOptions: RecordingOptions) => {
       setRecordingOptions(recordingOptions);
-      isMicrophoneReady ? recordingDialogOnOpen() : microphoneUsed === "microbit" ? connectToRecordDialogOnOpen() : allowMicrophoneAccessDialogOnOpen();
+      isMicrophoneReady
+        ? recordingDialogOnOpen()
+        : microphoneUsed === "microbit"
+        ? connectToRecordDialogOnOpen()
+        : allowMicrophoneAccessDialogOnOpen();
     },
-    [microphoneUsed, allowMicrophoneAccessDialogOnOpen, connectToRecordDialogOnOpen, isMicrophoneReady, recordingDialogOnOpen]
+    [
+      microphoneUsed,
+      allowMicrophoneAccessDialogOnOpen,
+      connectToRecordDialogOnOpen,
+      isMicrophoneReady,
+      recordingDialogOnOpen,
+    ]
   );
 
   const tourStart = useStore((s) => s.tourStart);

@@ -29,8 +29,9 @@ export const smoothenDataPoint = (curr: number, next: number) => {
 const LiveGraph = () => {
   const { status } = useConnectionStage();
   const connectActions = useConnectActions();
-  const [{ microphoneUsed, graphColorScheme, graphLineScheme, graphLineWeight }] =
-    useSettings();
+  const [
+    { microphoneUsed, graphColorScheme, graphLineScheme, graphLineWeight },
+  ] = useSettings();
   const isMicrophoneReady = useMicrophoneReady();
 
   const colors = useGraphColors(graphColorScheme);
@@ -113,7 +114,11 @@ const LiveGraph = () => {
   ]);
 
   useEffect(() => {
-    if (isMicrophoneReady || (status === ConnectionStatus.ReconnectingAutomatically && microphoneUsed === "microbit")) {
+    if (
+      isMicrophoneReady ||
+      (status === ConnectionStatus.ReconnectingAutomatically &&
+        microphoneUsed === "microbit")
+    ) {
       chart?.start();
     } else {
       chart?.stop();
@@ -170,7 +175,7 @@ const LiveGraph = () => {
       removeAudioListener(listener);
     };
   }, [connectActions, isMicrophoneReady, lineX, lineY, lineZ]);
-  
+
   return (
     <HStack
       ref={liveGraphContainerRef}

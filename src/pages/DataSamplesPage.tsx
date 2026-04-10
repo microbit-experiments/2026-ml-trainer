@@ -120,7 +120,10 @@ const DataSamplesPage = () => {
               )}
             </HStack>
           </HStack>
-          <LiveGraphPanel disconnectedTextId="connect-to-record" noPermissionTextId="allow-microphone-to-record" />
+          <LiveGraphPanel
+            disconnectedTextId="connect-to-record"
+            noPermissionTextId="allow-microphone-to-record"
+          />
         </VStack>
       </DefaultPageLayout>
     </>

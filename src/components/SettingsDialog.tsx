@@ -117,15 +117,17 @@ export const SettingsDialog = ({
             <ModalBody>
               <VStack alignItems="flex-start">
                 <Text fontSize="sm" fontWeight="normal" color="gray.600" mt={3}>
-                  <FormattedMessage
-                    id="settings-recording"
-                  />
+                  <FormattedMessage id="settings-recording" />
                 </Text>
                 <Divider />
                 <SelectFormControl
                   id="microphoneUsed"
                   label={intl.formatMessage({ id: "microphone-used" })}
-                  options={createOptions(microphoneUsedOptions, "microphone-used", intl)}
+                  options={createOptions(
+                    microphoneUsedOptions,
+                    "microphone-used",
+                    intl
+                  )}
                   value={settings.microphoneUsed}
                   onChange={(microphoneUsed) =>
                     setSettings({
@@ -135,9 +137,7 @@ export const SettingsDialog = ({
                   }
                 />
                 <Text fontSize="sm" fontWeight="normal" color="gray.600" mt={6}>
-                  <FormattedMessage
-                    id="settings-graph"
-                  />
+                  <FormattedMessage id="settings-graph" />
                 </Text>
                 <Divider />
                 <VStack alignItems="flex-start" w="full" spacing={5}>
