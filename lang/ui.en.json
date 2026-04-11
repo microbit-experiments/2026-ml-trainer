@@ -63,6 +63,22 @@
     "defaultMessage": "AI storytelling friend",
     "description": "Home page resource card title"
   },
+  "allow-microphone-to-record": {
+    "defaultMessage": "Allow microphone access to record data samples",
+    "description": "Live graph no microphone access status message for data samples page"
+  },
+  "allow-microphone-to-record-body": {
+    "defaultMessage": "Allow microphone access to record a data sample.",
+    "description": "Prompt to allow microphone access to record at data sample"
+  },
+  "allow-microphone-to-test-model": {
+    "defaultMessage": "Allow microphone access to test your ML model",
+    "description": "Live graph no microphone access status message for test model page"
+  },
+  "allow-microphone-to-tour-body": {
+    "defaultMessage": "You need to allow microphone access to view the tour.",
+    "description": "Prompt to allow microphone access to view the tour"
+  },
   "back-action": {
     "defaultMessage": "Back",
     "description": "Back button text"
@@ -499,10 +515,6 @@
     "defaultMessage": "Disconnect",
     "description": "Disconnect (from bluetooth/radio) action"
   },
-  "disconnected-during-recording": {
-    "defaultMessage": "micro:bit disconnected during recording",
-    "description": "Error when the micro:bit is disconnected during recording"
-  },
   "disconnected-warning-bluetooth-heading": {
     "defaultMessage": "Data collection micro:bit connection lost",
     "description": "Dialog heading"
@@ -590,6 +602,10 @@
   "edit-in-makecode-action": {
     "defaultMessage": "Edit in MakeCode",
     "description": "Edit in MakeCode button text"
+  },
+  "error-during-recording": {
+    "defaultMessage": "An error occurred while recording",
+    "description": "Error during recording, e.g. when the micro:bit is disconnected or microphone is muted"
   },
   "estimated-action-aria": {
     "defaultMessage": "Estimated action: \"{action}\"",
@@ -1171,6 +1187,22 @@
     "defaultMessage": "Your micro:bit is not connected",
     "description": "Live graph disconnected micro:bit status message"
   },
+  "microphone-access-blocked": {
+    "defaultMessage": "Microphone access blocked",
+    "description": "Live graph no microphone access status message"
+  },
+  "microphone-used": {
+    "defaultMessage": "Microphone used",
+    "description": "Microphone used setting label"
+  },
+  "microphone-used-device": {
+    "defaultMessage": "Your device",
+    "description": "Microphone used setting option"
+  },
+  "microphone-used-microbit": {
+    "defaultMessage": "micro:bit",
+    "description": "Microphone used setting option"
+  },
   "ml.onStart|block": {
     "defaultMessage": "on ML $event start",
     "description": "This string should be a Crowdin duplicate of the MakeCode extension block with the same text and use the same translation."
@@ -1515,9 +1547,17 @@
     "defaultMessage": "Settings",
     "description": "Text for settings dialog header and menu item"
   },
+  "settings-graph": {
+    "defaultMessage": "Graph",
+    "description": "Settings category label"
+  },
   "settings-menu-action": {
     "defaultMessage": "Settings actions menu",
     "description": "Label for settings actions menu button"
+  },
+  "settings-recording": {
+    "defaultMessage": "Recording",
+    "description": "Settings category label"
   },
   "show-graphs-checkbox-label-text": {
     "defaultMessage": "Show graphs",
