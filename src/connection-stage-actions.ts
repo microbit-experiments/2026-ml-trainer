@@ -75,6 +75,24 @@ export class ConnectionStageActions {
     onSuccess: (stage: ConnectionStage) => void
   ) => {
     this.setFlowStep(ConnectionFlowStep.WebUsbChooseMicrobit);
+
+    // Wired microphone mode: connect directly to a single USB micro:bit.
+    // We intentionally skip flashing/installing radio bridge firmware.
+    if (this.stage.flowType === ConnectionFlowType.ConnectRadioRemote) {
+      const { result: usbResult, deviceId } = await this.actions.requestUSBConnection();
+      if (usbResult !== ConnectResult.Success) {
+        return this.handleConnectAndFlashFail(usbResult);
+      }
+      this.setStage({
+        ...this.stage,
+        connType: "radio",
+        radioRemoteDeviceId: deviceId,
+      });
+      this.setStatus(ConnectionStatus.Connected);
+      this.onConnected();
+      return;
+    }
+
     const hex = this.getHexType();
 
     const {
@@ -284,10 +302,7 @@ export class ConnectionStageActions {
   switchFlowType = () => {
     this.setStage({
       ...this.stage,
-      flowType:
-        this.stage.flowType === ConnectionFlowType.ConnectBluetooth
-          ? ConnectionFlowType.ConnectRadioRemote
-          : ConnectionFlowType.ConnectBluetooth,
+      flowType: ConnectionFlowType.ConnectRadioRemote,
     });
   };
 
@@ -295,7 +310,7 @@ export class ConnectionStageActions {
     this.setStage({
       ...this.stage,
       flowStep: ConnectionFlowStep.Start,
-      flowType: ConnectionFlowType.ConnectBluetooth,
+      flowType: ConnectionFlowType.ConnectRadioRemote,
     });
   };
 
@@ -384,18 +399,6 @@ const radioFlow = ({ isRestartAgain }: { isRestartAgain: boolean }) => [
   {
     flowStep: ConnectionFlowStep.WebUsbFlashingTutorial,
     flowType: ConnectionFlowType.ConnectRadioRemote,
-  },
-  {
-    flowStep: ConnectionFlowStep.ConnectBattery,
-    flowType: ConnectionFlowType.ConnectRadioRemote,
-  },
-  {
-    flowStep: ConnectionFlowStep.ConnectCable,
-    flowType: ConnectionFlowType.ConnectRadioBridge,
-  },
-  {
-    flowStep: ConnectionFlowStep.WebUsbFlashingTutorial,
-    flowType: ConnectionFlowType.ConnectRadioBridge,
   },
 ];
 

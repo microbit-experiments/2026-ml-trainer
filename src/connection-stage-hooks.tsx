@@ -113,12 +113,11 @@ const getInitialConnectionStageValue = (
   isWebUsbSupported: boolean
 ): ConnectionStage => ({
   flowStep: ConnectionFlowStep.None,
-  flowType: isWebBluetoothSupported
-    ? ConnectionFlowType.ConnectBluetooth
-    : ConnectionFlowType.ConnectRadioRemote,
+  // Audio capture now uses a wired micro:bit, so start in USB/radio flow.
+  flowType: ConnectionFlowType.ConnectRadioRemote,
   bluetoothMicrobitName: config.bluetoothMicrobitName,
   radioRemoteDeviceId: config.radioRemoteDeviceId,
-  connType: isWebBluetoothSupported ? "bluetooth" : "radio",
+  connType: "radio",
   isWebBluetoothSupported,
   isWebUsbSupported,
   hasFailedToReconnectTwice: false,

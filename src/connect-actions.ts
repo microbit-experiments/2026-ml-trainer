@@ -248,7 +248,8 @@ export class ConnectActions {
     return {
       bluetooth: (e) => listener({ status: e.status, type: "bluetooth" }),
       radioBridge: (e) => listener({ status: e.status, type: "radioRemote" }),
-      usb: (e) => listener({ status: e.status, type: "usb" }),
+      // Wired mode treats USB as the data-collection connection source.
+      usb: (e) => listener({ status: e.status, type: "radioRemote" }),
     };
   };
 
@@ -258,8 +259,8 @@ export class ConnectActions {
       this.bluetooth.addEventListener("status", listeners.bluetooth);
       this.statusListeners.bluetooth = listeners.bluetooth;
     } else {
-      this.radioBridge.addEventListener("status", listeners.radioBridge);
-      this.statusListeners.radioBridge = listeners.radioBridge;
+      this.radioBridge.removeEventListener("status", this.statusListeners.radioBridge);
+      this.statusListeners.radioBridge = () => {};
       this.usb.addEventListener("status", listeners.usb);
       this.statusListeners.usb = listeners.usb;
     }
