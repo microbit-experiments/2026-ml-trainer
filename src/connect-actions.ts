@@ -14,10 +14,8 @@ import {
   MicrobitRadioBridgeConnection,
   MicrobitWebBluetoothConnection,
   MicrobitWebUSBConnection,
-  createUniversalHexFlashDataSource,
 } from "@microbit/microbit-connection";
 import { ConnectionType } from "./connection-stage-hooks";
-import { HexType, getFlashDataSource } from "./device/get-hex-file";
 import { Logging } from "./logging/logging";
 
 export enum ConnectResult {
@@ -113,30 +111,14 @@ export class ConnectActions {
   };
 
   flashMicrobit = async (
-    hex: string | HexType,
+    hex: string,
     progress: (progress: number) => void,
     temporaryUsbConnection?: MicrobitWebUSBConnection
   ): Promise<ConnectResult> => {
-    const usb = temporaryUsbConnection ?? this.usb;
-    if (!usb) {
-      return ConnectResult.Failed;
-    }
-    const data = Object.values(HexType).includes(hex as HexType)
-      ? getFlashDataSource(hex as HexType)
-      : createUniversalHexFlashDataSource(hex);
-    try {
-      await usb.flash(data, {
-        partial: true,
-        // If we could improve the re-rendering due to progress further we can remove this and accept the
-        // default which updates 4x as often.
-        minimumProgressIncrement: 0.01,
-        progress: (v: number | undefined) => progress(v ?? 1),
-      });
-      return ConnectResult.Success;
-    } catch (e) {
-      this.logging.error(`Flashing failed: ${JSON.stringify(e)}`);
-      return ConnectResult.Failed;
-    }
+    void hex;
+    void progress;
+    void temporaryUsbConnection;
+    return ConnectResult.Failed;
   };
 
   private handleConnectAndFlashError = (

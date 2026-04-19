@@ -3,8 +3,6 @@
  *
  * SPDX-License-Identifier: MIT
  */
-import { BoardVersion } from "@microbit/microbit-connection";
-import { deviceIdToMicrobitName } from "./bt-pattern-utils";
 import {
   ConnectActions,
   ConnectAndFlashFailResult,
@@ -17,17 +15,9 @@ import {
   ConnectionStage,
   ConnectionType,
 } from "./connection-stage-hooks";
-import { getHexFileUrl, HexType } from "./device/get-hex-file";
-import { HexUrl } from "./model";
-import { downloadHex } from "./utils/fs-util";
 import { ConnectOptions } from "./store";
 
 type FlowStage = Pick<ConnectionStage, "flowStep" | "flowType">;
-
-export const bluetoothUniversalHex: HexUrl = {
-  url: getHexFileUrl("universal", HexType.Bluetooth)!,
-  name: "data-collection-program",
-};
 
 export class ConnectionStageActions {
   constructor(
@@ -71,110 +61,31 @@ export class ConnectionStageActions {
   };
 
   connectAndflashMicrobit = async (
-    progressCallback: (progress: number) => void,
+    _progressCallback: (progress: number) => void,
     onSuccess: (stage: ConnectionStage) => void
   ) => {
     this.setFlowStep(ConnectionFlowStep.WebUsbChooseMicrobit);
 
-    // Wired microphone mode: connect directly to a single USB micro:bit.
-    // We intentionally skip flashing/installing radio bridge firmware.
-    if (this.stage.flowType === ConnectionFlowType.ConnectRadioRemote) {
-      const { result: usbResult, deviceId } = await this.actions.requestUSBConnection();
-      if (usbResult !== ConnectResult.Success) {
-        return this.handleConnectAndFlashFail(usbResult);
-      }
-      this.setStage({
-        ...this.stage,
-        connType: "radio",
-        radioRemoteDeviceId: deviceId,
-      });
-      this.setStatus(ConnectionStatus.Connected);
-      this.onConnected();
-      return;
-    }
-
-    const hex = this.getHexType();
-
     const {
       result: usbResult,
-      usb,
       deviceId,
     } = await this.actions.requestUSBConnection();
     if (usbResult !== ConnectResult.Success) {
       return this.handleConnectAndFlashFail(usbResult);
     }
-    const boardVersion = usb?.getBoardVersion();
-    if (
-      usbResult === ConnectResult.Success &&
-      boardVersion === "V1" &&
-      this.stage.flowType !== ConnectionFlowType.ConnectBluetooth
-    ) {
-      return this.setFlowStep(ConnectionFlowStep.MicrobitUnsupported);
-    }
-    const flashResult = await this.actions.flashMicrobit(hex, progressCallback);
-    if (flashResult !== ConnectResult.Success) {
-      return this.handleConnectAndFlashFail(flashResult);
-    }
-    await this.onFlashSuccess(deviceId, onSuccess, boardVersion);
-  };
-
-  private getHexType = () => {
-    return {
-      [ConnectionFlowType.ConnectBluetooth]: HexType.Bluetooth,
-      [ConnectionFlowType.ConnectRadioBridge]: HexType.RadioBridge,
-      [ConnectionFlowType.ConnectRadioRemote]: HexType.RadioRemote,
-    }[this.stage.flowType];
-  };
-
-  private onFlashSuccess = async (
-    deviceId: number,
-    onSuccess: (stage: ConnectionStage) => void,
-    boardVersion?: BoardVersion
-  ) => {
-    let newStage = this.stage;
-    // Store radio/bluetooth details. Radio is essential to pass to micro:bit 2.
-    // Bluetooth saves the user from entering the pattern.
-    switch (this.stage.flowType) {
-      case ConnectionFlowType.ConnectBluetooth: {
-        const microbitName = deviceIdToMicrobitName(deviceId);
-        newStage = {
-          ...this.stage,
-          connType: "bluetooth",
-          flowStep: ConnectionFlowStep.ConnectBattery,
-          bluetoothDeviceId: deviceId,
-          bluetoothMicrobitName: microbitName,
-        };
-        break;
-      }
-      case ConnectionFlowType.ConnectRadioBridge: {
-        await this.connectMicrobits({
-          radioBridgeDeviceId: deviceId,
-        });
-        return;
-      }
-      case ConnectionFlowType.ConnectRadioRemote: {
-        newStage = {
-          ...this.stage,
-          connType: "radio",
-          flowStep: ConnectionFlowStep.ConnectBattery,
-          radioRemoteDeviceId: deviceId,
-          radioRemoteBoardVersion: boardVersion,
-        };
-        break;
-      }
-    }
+    const newStage: ConnectionStage = {
+      ...this.stage,
+      connType: "radio",
+      flowStep: ConnectionFlowStep.None,
+      radioRemoteDeviceId: deviceId,
+    };
     onSuccess(newStage);
     this.setStage(newStage);
+    this.setStatus(ConnectionStatus.Connected);
+    this.onConnected();
   };
 
   private handleConnectAndFlashFail = (result: ConnectAndFlashFailResult) => {
-    if (result === ConnectResult.ErrorBadFirmware) {
-      return this.setFlowStep(ConnectionFlowStep.BadFirmware);
-    }
-    if (this.stage.flowType === ConnectionFlowType.ConnectBluetooth) {
-      downloadHex(bluetoothUniversalHex);
-      return this.setFlowStep(ConnectionFlowStep.ManualFlashingTutorial);
-    }
     switch (result) {
       case ConnectResult.ErrorNoDeviceSelected:
         return this.setFlowStep(
@@ -316,13 +227,6 @@ export class ConnectionStageActions {
 
   private getStagesOrder = () => {
     const isRestartAgain = this.stage.hasFailedToReconnectTwice;
-    const isManualFlashing =
-      !this.stage.isWebUsbSupported ||
-      this.stage.flowStep === ConnectionFlowStep.ManualFlashingTutorial;
-
-    if (this.stage.flowType === ConnectionFlowType.ConnectBluetooth) {
-      return bluetoothFlow({ isManualFlashing, isRestartAgain });
-    }
     return radioFlow({ isRestartAgain });
   };
 
@@ -346,44 +250,6 @@ export class ConnectionStageActions {
     );
   };
 }
-
-const bluetoothFlow = ({
-  isManualFlashing,
-  isRestartAgain,
-}: {
-  isManualFlashing: boolean;
-  isRestartAgain: boolean;
-}) => [
-  {
-    flowStep: isRestartAgain
-      ? ConnectionFlowStep.ReconnectFailedTwice
-      : ConnectionFlowStep.Start,
-    flowType: ConnectionFlowType.ConnectBluetooth,
-  },
-  {
-    flowStep: ConnectionFlowStep.ConnectCable,
-    flowType: ConnectionFlowType.ConnectBluetooth,
-  },
-  // Only bluetooth mode has this fallback, the radio bridge mode requires working WebUSB.
-  {
-    flowStep: isManualFlashing
-      ? ConnectionFlowStep.ManualFlashingTutorial
-      : ConnectionFlowStep.WebUsbFlashingTutorial,
-    flowType: ConnectionFlowType.ConnectBluetooth,
-  },
-  {
-    flowStep: ConnectionFlowStep.ConnectBattery,
-    flowType: ConnectionFlowType.ConnectBluetooth,
-  },
-  {
-    flowStep: ConnectionFlowStep.EnterBluetoothPattern,
-    flowType: ConnectionFlowType.ConnectBluetooth,
-  },
-  {
-    flowStep: ConnectionFlowStep.ConnectBluetoothTutorial,
-    flowType: ConnectionFlowType.ConnectBluetooth,
-  },
-];
 
 const radioFlow = ({ isRestartAgain }: { isRestartAgain: boolean }) => [
   {

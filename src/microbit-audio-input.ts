@@ -19,8 +19,16 @@ interface NavigatorWithSerial extends Navigator {
 const SAMPLE_RATE_FALLBACK = 8000;
 const DURATION_MS = 990;
 const ANALYSIS_INTERVAL_MS = 20;
+const DEBUG_SAMPLE_INTERVALS = 1000 / ANALYSIS_INTERVAL_MS;
 
 const FRAME_PREFIX = "MBAUDIO";
+const DEBUG_AUDIO_STREAM = true;
+
+const debugAudio = (...args: unknown[]) => {
+  if (DEBUG_AUDIO_STREAM) {
+    console.debug("[microbit-audio]", ...args);
+  }
+};
 
 let listeners: Array<(event: AudioXYZEvent) => void> = [];
 
@@ -51,14 +59,78 @@ export const addMicrobitAudioListener = (
 export const removeMicrobitAudioListener = (
   listener: (event: AudioXYZEvent) => void
 ) => {
-  listeners = listeners.filter((l) => l !== listener);
+  listeners = listeners.filter((currentListener) => currentListener !== listener);
 };
 
 const emitXYZ = (x: number, y: number, z: number) => {
-  // Keep the existing app data path by publishing into the shared XYZ stream bus.
   XYZStream(x, y, z);
   const event: AudioXYZEvent = { data: { x, y, z } };
   listeners.forEach((listener) => listener(event));
+};
+
+const debugSnapshot = (
+  label: string,
+  details: Record<string, unknown>
+) => {
+  debugAudio(label, details);
+};
+
+const debugPreview = (value: string, maxLength: number = 120) => {
+  return value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
+};
+
+const countChar = (value: string, target: string) => {
+  let count = 0;
+  for (const character of value) {
+    if (character === target) {
+      count += 1;
+    }
+  }
+  return count;
+};
+
+const summarizeTextChunk = (value: string) => {
+  const replacementCount = countChar(value, "\uFFFD");
+  const newlineCount = countChar(value, "\n");
+  const commaCount = countChar(value, ",");
+  const hasPrefix = value.includes(FRAME_PREFIX);
+  const preview = debugPreview(value, 80);
+  const quality =
+    replacementCount > 0
+      ? "contains-replacement-chars"
+      : hasPrefix
+      ? "looks-like-mbaudio-text"
+      : "text-without-prefix";
+
+  return {
+    length: value.length,
+    replacementCount,
+    newlineCount,
+    commaCount,
+    hasPrefix,
+    quality,
+    preview,
+  };
+};
+
+const previewTextBytes = (value: string, maxLength: number = 24) => {
+  const bytes = Array.from(value.slice(0, maxLength), (character) =>
+    character.charCodeAt(0)
+  );
+  const ascii = bytes
+    .map((byte) => (byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : "."))
+    .join("");
+  const hex = bytes.map((byte) => byte.toString(16).padStart(2, "0")).join(" ");
+  return { ascii, hex, length: value.length };
+};
+
+const previewBinaryBytes = (value: Uint8Array, maxLength: number = 24) => {
+  const bytes = Array.from(value.slice(0, maxLength));
+  const ascii = bytes
+    .map((byte) => (byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : "."))
+    .join("");
+  const hex = bytes.map((byte) => byte.toString(16).padStart(2, "0")).join(" ");
+  return { ascii, hex, length: value.length };
 };
 
 export const requestMicrobitSerialPort = async (): Promise<SerialPortLike> => {
@@ -129,6 +201,7 @@ export const startMicrobitAudioStream = async (
 ): Promise<() => Promise<void>> => {
   const baudRate = options.baudRate ?? 1000000;
   const port = options.port ?? (await requestMicrobitSerialPort());
+  debugAudio("starting serial audio stream", { baudRate });
 
   if (!port.readable) {
     await port.open({ baudRate });
@@ -143,6 +216,9 @@ export const startMicrobitAudioStream = async (
   let pending = "";
   let sampleRate = SAMPLE_RATE_FALLBACK;
   const ringBuffer: number[] = [];
+  let debugTick = 0;
+  let receivedBytes = 0;
+  let receivedChunks = 0;
   const decoder = new TextDecoder();
 
   const readLoop = async () => {
@@ -152,6 +228,10 @@ export const startMicrobitAudioStream = async (
         break;
       }
 
+      debugAudio("serial chunk preview", previewBinaryBytes(value));
+
+      receivedChunks += 1;
+      receivedBytes += value.length;
       pending += decoder.decode(value, { stream: true });
       const parsed = parseFrames(pending);
       pending = parsed.remaining;
@@ -173,16 +253,38 @@ export const startMicrobitAudioStream = async (
       return;
     }
 
+    debugTick += 1;
     const maxLen = Math.floor((sampleRate * DURATION_MS) / 1000);
     if (ringBuffer.length < maxLen) {
+      if (debugTick % DEBUG_SAMPLE_INTERVALS === 0) {
+        debugSnapshot("waiting for audio data", {
+          sampleRate,
+          pendingBytes: pending.length,
+          ringBufferLength: ringBuffer.length,
+          receivedChunks,
+          receivedBytes,
+          pendingPreview: debugPreview(pending),
+        });
+      }
       return;
     }
 
     const samples = ringBuffer.slice(-maxLen);
     const xyz = splitAudioToXYZ(samples, sampleRate);
     const last = xyz.x.length - 1;
-
     if (last >= 0) {
+      if (debugTick % DEBUG_SAMPLE_INTERVALS === 0) {
+        debugSnapshot("audio sample snapshot", {
+          sampleRate,
+          ringBufferLength: ringBuffer.length,
+          sampleCount: samples.length,
+          xyz: {
+            x: xyz.x[last],
+            y: xyz.y[last],
+            z: xyz.z[last],
+          },
+        });
+      }
       emitXYZ(xyz.x[last], xyz.y[last], xyz.z[last]);
     }
   }, ANALYSIS_INTERVAL_MS);
@@ -210,11 +312,36 @@ export const startMicrobitAudioStreamFromUsbConnection = (
   let pending = "";
   let sampleRate = SAMPLE_RATE_FALLBACK;
   const ringBuffer: number[] = [];
+  let debugTick = 0;
+  let receivedBytes = 0;
+  let receivedChunks = 0;
+  let replacementChars = 0;
+  let newlineChars = 0;
+  let commaChars = 0;
+  let prefixHits = 0;
+
+  debugAudio("starting USB connection audio stream");
 
   const onSerialData = (event: SerialDataEvent) => {
     if (!active) {
       return;
     }
+
+    const chunkSummary = summarizeTextChunk(event.data);
+    replacementChars += chunkSummary.replacementCount;
+    newlineChars += chunkSummary.newlineCount;
+    commaChars += chunkSummary.commaCount;
+    if (chunkSummary.hasPrefix) {
+      prefixHits += 1;
+    }
+
+    debugAudio("usb serial chunk summary", {
+      ...chunkSummary,
+      bytePreview: previewTextBytes(event.data),
+    });
+
+    receivedChunks += 1;
+    receivedBytes += event.data.length;
     pending += event.data;
     const parsed = parseFrames(pending);
     pending = parsed.remaining;
@@ -235,8 +362,23 @@ export const startMicrobitAudioStreamFromUsbConnection = (
       return;
     }
 
+    debugTick += 1;
     const maxLen = Math.floor((sampleRate * DURATION_MS) / 1000);
     if (ringBuffer.length < maxLen) {
+      if (debugTick % DEBUG_SAMPLE_INTERVALS === 0) {
+        debugSnapshot("waiting for USB audio data", {
+          sampleRate,
+          pendingBytes: pending.length,
+          ringBufferLength: ringBuffer.length,
+          receivedChunks,
+          receivedBytes,
+          replacementChars,
+          newlineChars,
+          commaChars,
+          prefixHits,
+          pendingPreview: debugPreview(pending),
+        });
+      }
       return;
     }
 
@@ -244,6 +386,18 @@ export const startMicrobitAudioStreamFromUsbConnection = (
     const xyz = splitAudioToXYZ(samples, sampleRate);
     const last = xyz.x.length - 1;
     if (last >= 0) {
+      if (debugTick % DEBUG_SAMPLE_INTERVALS === 0) {
+        debugSnapshot("USB audio sample snapshot", {
+          sampleRate,
+          ringBufferLength: ringBuffer.length,
+          sampleCount: samples.length,
+          xyz: {
+            x: xyz.x[last],
+            y: xyz.y[last],
+            z: xyz.z[last],
+          },
+        });
+      }
       emitXYZ(xyz.x[last], xyz.y[last], xyz.z[last]);
     }
   }, ANALYSIS_INTERVAL_MS);

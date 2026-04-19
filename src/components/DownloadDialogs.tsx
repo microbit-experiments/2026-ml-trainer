@@ -12,16 +12,13 @@ import ConnectCableDialog from "./ConnectCableDialog";
 import ConnectRadioDataCollectionMicrobitDialog from "./ConnectRadioDataCollectionMicrobitDialog";
 import DownloadChooseMicrobitDialog from "./DownloadChooseMicrobitDialog";
 import DownloadHelpDialog from "./DownloadHelpDialog";
-import DownloadProgressDialog from "./DownloadProgressDialog";
 import IncompatibleEditorDevice from "./IncompatibleEditorDevice";
-import ManualFlashingDialog from "./ManualFlashingDialog";
 import SelectMicrobitUsbDialog from "./SelectMicrobitUsbDialog";
 import UnplugRadioLinkMicrobitDialog from "./UnplugRadioLinkMicrobitDialog";
 
 const DownloadDialogs = () => {
   const downloadActions = useDownloadActions();
   const stage = useStore((s) => s.download);
-  const flashingProgress = useStore((s) => s.downloadFlashingProgress);
   const actions = useStore((s) => s.actions);
   const logging = useLogging();
 
@@ -98,26 +95,6 @@ const DownloadDialogs = () => {
         />
       );
     }
-    case DownloadStep.FlashingInProgress:
-      return (
-        <DownloadProgressDialog
-          isOpen
-          headingId="downloading-header"
-          progress={flashingProgress * 100}
-        />
-      );
-    case DownloadStep.ManualFlashingTutorial:
-      if (!stage.hex) {
-        throw new Error("Project expected");
-      }
-      return (
-        <ManualFlashingDialog
-          isOpen
-          hex={stage.hex}
-          onClose={downloadActions.close}
-          closeIsPrimaryAction={true}
-        />
-      );
     case DownloadStep.IncompatibleDevice:
       return (
         <IncompatibleEditorDevice
