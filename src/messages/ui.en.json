@@ -48,19 +48,19 @@
   "action-label": [
     {
       "type": 0,
-      "value": "Action"
+      "value": "Sound"
     }
   ],
   "action-label-tooltip-aria": [
     {
       "type": 0,
-      "value": "Action tooltip"
+      "value": "Sound tooltip"
     }
   ],
   "action-length-error": [
     {
       "type": 0,
-      "value": "Action names cannot be longer than "
+      "value": "Sound names cannot be longer than "
     },
     {
       "type": 1,
@@ -74,17 +74,17 @@
   "action-name-placeholder": [
     {
       "type": 0,
-      "value": "Name of action"
+      "value": "Name of sound"
     }
   ],
   "action-region": [
     {
       "type": 0,
-      "value": "Action \""
+      "value": "Sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -94,7 +94,7 @@
   "action-tooltip": [
     {
       "type": 0,
-      "value": "The type of movement you want "
+      "value": "The type of sound you want "
     },
     {
       "type": 1,
@@ -102,19 +102,19 @@
     },
     {
       "type": 0,
-      "value": " to recognise e.g. ‘waving’ or ‘clapping’."
+      "value": " to recognise e.g. ‘humming’ or ‘whistling’."
     }
   ],
   "actions-label": [
     {
       "type": 0,
-      "value": "Actions"
+      "value": "Sounds"
     }
   ],
   "add-action-action": [
     {
       "type": 0,
-      "value": "Add action"
+      "value": "Add sound"
     }
   ],
   "ai-activity-timer-resource-title": [
@@ -220,7 +220,7 @@
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -238,7 +238,7 @@
   "certainty-tooltip": [
     {
       "type": 0,
-      "value": "How confident the model is that you are currently doing each action."
+      "value": "How confident the model is that you are currently doing each sound."
     }
   ],
   "click-to-reload-page-action": [
@@ -274,7 +274,7 @@
   "code-tooltip": [
     {
       "type": 0,
-      "value": "These are the MakeCode blocks for each detected action when you transfer your ML model and code to a micro:bit"
+      "value": "These are the MakeCode blocks for each detected sound when you transfer your ML model and code to a micro:bit"
     }
   ],
   "confirm-action": [
@@ -798,7 +798,7 @@
   "data-samples-tooltip": [
     {
       "type": 0,
-      "value": "Short collections of movement data lasting 1 second. Your data samples are only stored on your computer, they do not get sent to anyone else."
+      "value": "Short collections of audio data lasting 1 second. Your data samples are only stored on your computer, they do not get sent to anyone else."
     }
   ],
   "default-project-name": [
@@ -810,11 +810,11 @@
   "delete-action-aria": [
     {
       "type": 0,
-      "value": "Delete action \""
+      "value": "Delete sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -824,17 +824,17 @@
   "delete-action-confirm-heading": [
     {
       "type": 0,
-      "value": "Confirm delete action"
+      "value": "Confirm delete sound"
     }
   ],
   "delete-action-confirm-text": [
     {
       "type": 0,
-      "value": "Are you sure you want to delete the action \""
+      "value": "Are you sure you want to delete the sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -878,11 +878,11 @@
     },
     {
       "type": 0,
-      "value": " for action \""
+      "value": " for sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -1044,11 +1044,11 @@
   "estimated-action-aria": [
     {
       "type": 0,
-      "value": "Estimated action: \""
+      "value": "Estimated sound: \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -1058,19 +1058,19 @@
   "estimated-action-label": [
     {
       "type": 0,
-      "value": "Estimated action"
+      "value": "Estimated sound"
     }
   ],
   "estimated-action-label-tooltip-aria": [
     {
       "type": 0,
-      "value": "Estimated action tooltip"
+      "value": "Estimated sound tooltip"
     }
   ],
   "estimated-action-tooltip": [
     {
       "type": 0,
-      "value": "This is the action the model thinks you are currently doing."
+      "value": "This is the sound the model thinks you are currently making."
     }
   ],
   "feedback": [
@@ -1366,13 +1366,13 @@
   "homepage-alt": [
     {
       "type": 0,
-      "value": "graph showing x, y, z graph lines representing micro:bit accelerometer data with clapping hands overlaid"
+      "value": "graph showing x, y, z graph lines representing micro:bit microphone data with clapping hands overlaid"
     }
   ],
   "homepage-alt-graph": [
     {
       "type": 0,
-      "value": "graph showing x, y, z graph lines representing micro:bit accelerometer data"
+      "value": "graph showing x, y, z graph lines representing micro:bit microphone data"
     }
   ],
   "homepage-alt-hands": [
@@ -1384,13 +1384,13 @@
   "homepage-alt-media": [
     {
       "type": 0,
-      "value": "video showing CreateAI detecting different movements"
+      "value": "video showing CreateAI detecting different sounds"
     }
   ],
   "homepage-description": [
     {
       "type": 0,
-      "value": "Train a machine learning model on your own movement data and run it on your micro:bit."
+      "value": "Train a machine learning model on your own audio data and run it on your micro:bit."
     }
   ],
   "homepage-how-it-works": [
@@ -1526,7 +1526,7 @@
   "homepage-subtitle": [
     {
       "type": 0,
-      "value": "Create AI on your BBC micro:bit using movement and machine learning."
+      "value": "Create AI on your BBC micro:bit using audio and machine learning."
     }
   ],
   "homepage-video-alt": [
@@ -1632,7 +1632,7 @@
   "insufficient-data-body": [
     {
       "type": 0,
-      "value": "You need at least 3 data samples for 2 actions to train the model."
+      "value": "You need at least 3 data samples for 2 sounds to train the model."
     }
   ],
   "insufficient-data-title": [
@@ -1950,7 +1950,7 @@
   "live-graph-tooltip": [
     {
       "type": 0,
-      "value": "This graph shows movement data from the micro:bit's accelerometer in real time. Try moving your data collection micro:bit to see the X, Y and Z axes change. Each coloured line represents a different direction (dimension) you are moving the micro:bit in."
+      "value": "This graph shows audio data from the micro:bit's microphone in real time. Try moving your data collection micro:bit to see the X, Y and Z axes change. Each coloured line represents a different direction (dimension) you are moving the micro:bit in."
     }
   ],
   "live-graph-tooltip-aria": [
@@ -2050,7 +2050,7 @@
   "name-action-hint": [
     {
       "type": 0,
-      "value": "Name an action you want the micro:bit to recognise"
+      "value": "Name a sound you want the micro:bit to recognise"
     }
   ],
   "name-project": [
@@ -2164,7 +2164,7 @@
   "newpage-new-session-subtitle": [
     {
       "type": 0,
-      "value": "Connect your micro:bit and collect movement data to build a machine learning model."
+      "value": "Connect your micro:bit and collect audio data to build a machine learning model."
     }
   ],
   "newpage-new-session-title": [
@@ -2278,7 +2278,7 @@
   "open-shared-project-data-preview-description": [
     {
       "type": 0,
-      "value": "Preview of the actions and data contained within this project."
+      "value": "Preview of the sounds and data contained within this project."
     }
   ],
   "open-shared-project-description": [
@@ -2430,11 +2430,11 @@
   "record-action-aria": [
     {
       "type": 0,
-      "value": "Record data for action \""
+      "value": "Record data for sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -2490,7 +2490,7 @@
   "record-seconds-help": [
     {
       "type": 0,
-      "value": "Move continuously to get "
+      "value": "Make noise continuously to get "
     },
     {
       "type": 1,
@@ -2516,11 +2516,11 @@
   "recording-data-for": [
     {
       "type": 0,
-      "value": "Record data for action \""
+      "value": "Record data for sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -2546,11 +2546,11 @@
     },
     {
       "type": 0,
-      "value": " for action \""
+      "value": " for sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -2560,23 +2560,23 @@
   "recording-fingerprint-label": [
     {
       "type": 0,
-      "value": "heatmap showing micro:bit x, y, z accelerometer data features for one recording"
+      "value": "heatmap showing micro:bit x, y, z microphone data features for one recording"
     }
   ],
   "recording-graph-label": [
     {
       "type": 0,
-      "value": "graph showing micro:bit x, y, z accelerometer data for one recording"
+      "value": "graph showing micro:bit x, y, z microphone data for one recording"
     }
   ],
   "recording-options-aria": [
     {
       "type": 0,
-      "value": "More recording options for action \""
+      "value": "More recording options for sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -2640,7 +2640,7 @@
   "save-hex-dialog-message1": [
     {
       "type": 0,
-      "value": "The download contains your actions, data samples and your MakeCode project. Open it in "
+      "value": "The download contains your sounds, data samples and your MakeCode project. Open it in "
     },
     {
       "type": 1,
@@ -2654,7 +2654,7 @@
   "save-hex-dialog-message2": [
     {
       "type": 0,
-      "value": "You can also open it with Microsoft MakeCode if you don't need to change the actions and data samples."
+      "value": "You can also open it with Microsoft MakeCode if you don't need to change the sounds and data samples."
     }
   ],
   "saving-description": [
@@ -2678,11 +2678,11 @@
   "select-icon-action-aria": [
     {
       "type": 0,
-      "value": "Pick icon for action \""
+      "value": "Pick icon for sound \""
     },
     {
       "type": 1,
-      "value": "action"
+      "value": "sound"
     },
     {
       "type": 0,
@@ -2692,7 +2692,7 @@
   "select-icon-action-untitled-aria": [
     {
       "type": 0,
-      "value": "Pick icon for untitled action"
+      "value": "Pick icon for untitled sound"
     }
   ],
   "select-icon-option-action-aria": [
@@ -2878,19 +2878,19 @@
   "tour-collect-addActions-content": [
     {
       "type": 0,
-      "value": "Decide what your other actions will be and what you will name them. You need at least 2 actions with 3 data samples to train the model. Your data samples are only stored on your computer, they do not get sent to anyone else."
+      "value": "Decide what your other sounds will be and what you will name them. You need at least 2 sounds with 3 data samples to train the model. Your data samples are only stored on your computer, they do not get sent to anyone else."
     }
   ],
   "tour-collect-addActions-title": [
     {
       "type": 0,
-      "value": "Add more actions"
+      "value": "Add more sounds"
     }
   ],
   "tour-collect-afterFirst-content": [
     {
       "type": 0,
-      "value": "To train the machine learning model you need at least 3 data samples for 2 different actions."
+      "value": "To train the machine learning model you need at least 3 data samples for 2 different sounds."
     }
   ],
   "tour-collect-afterFirst-title": [
@@ -2936,13 +2936,13 @@
   "tour-collect-collectMore-hasRecordings-content": [
     {
       "type": 0,
-      "value": "Record data samples for your actions."
+      "value": "Record data samples for your sounds."
     }
   ],
   "tour-collect-collectMore-noRecordings-content": [
     {
       "type": 0,
-      "value": "Record more samples for this action."
+      "value": "Record more samples for this sound."
     }
   ],
   "tour-collect-collectMore-title": [
@@ -2960,19 +2960,19 @@
   "tour-dataSamples-actions-common-content": [
     {
       "type": 0,
-      "value": "An action is the type of movement you want the machine learning model to recognise e.g. ‘waving’ or ‘clapping’."
+      "value": "A sound is the type of noise you want the machine learning model to recognise e.g. ‘humming’ or ‘whistling’."
     }
   ],
   "tour-dataSamples-actions-noRecordings-content": [
     {
       "type": 0,
-      "value": "Decide what your first action will be, name it and then start recording data samples."
+      "value": "Decide what your first sound will be, name it and then start recording data samples."
     }
   ],
   "tour-dataSamples-connected-content": [
     {
       "type": 0,
-      "value": "Now you can start collecting data samples to train a machine learning (ML) model to recognise different movements, or actions."
+      "value": "Now you can start collecting data samples to train a machine learning (ML) model to recognise different sounds."
     }
   ],
   "tour-dataSamples-connected-title": [
@@ -2984,7 +2984,7 @@
   "tour-dataSamples-liveGraph-content": [
     {
       "type": 0,
-      "value": "The graph shows movement data from the micro:bit’s accelerometer. Move your data collection micro:bit and see how the graph changes."
+      "value": "The graph shows audio data from the micro:bit’s microphone. Make noise into your data collection micro:bit and see how the graph changes."
     }
   ],
   "tour-makecode-intro-content1": [
@@ -3020,7 +3020,7 @@
   "tour-trainModel-afterTrain-content": [
     {
       "type": 0,
-      "value": "Now test your machine learning model. Try each action by moving your data collection micro:bit. Does the model correctly estimate each action?"
+      "value": "Now test your machine learning model. Try each sound by making noise into your data collection micro:bit. Does the model correctly estimate each sound?"
     }
   ],
   "tour-trainModel-afterTrain-delayedUntilConnected-title": [
@@ -3032,7 +3032,7 @@
   "tour-trainModel-certaintyRecognition-content": [
     {
       "type": 0,
-      "value": "The bar graph shows how confident the model is that you are doing each action. Move the slider to adjust the recognition point, or threshold."
+      "value": "The bar graph shows how confident the model is that you are making each sound. Move the slider to adjust the recognition point, or threshold."
     }
   ],
   "tour-trainModel-certaintyRecognition-title": [
@@ -3050,13 +3050,13 @@
   "tour-trainModel-estimatedAction-content": [
     {
       "type": 0,
-      "value": "The action the model estimates you are currently doing is shown below the micro:bit icon for that action."
+      "value": "The sound the model estimates you are currently doing is shown below the micro:bit icon for that sound."
     }
   ],
   "tour-trainModel-makeCodeBlocks-content": [
     {
       "type": 0,
-      "value": "These MakeCode blocks will show icons for each action detected when you transfer your code and model to a micro:bit."
+      "value": "These MakeCode blocks will show icons for each sound detected when you transfer your code and model to a micro:bit."
     }
   ],
   "tour-trainModel-makeCodeBlocks-title": [
@@ -3076,13 +3076,13 @@
     },
     {
       "type": 0,
-      "value": " to recognise different actions when you move your micro:bit."
+      "value": " to recognise different sounds when you make noise into your micro:bit."
     }
   ],
   "train-error-body": [
     {
       "type": 0,
-      "value": "The training did not result in a usable model. The reason for this is most likely the data used for training. If the data samples for different actions are too similar, this can result in issues in the training process."
+      "value": "The training did not result in a usable model. The reason for this is most likely the data used for training. If the data samples for different sonuds are too similar, this can result in issues in the training process."
     }
   ],
   "train-error-header": [
