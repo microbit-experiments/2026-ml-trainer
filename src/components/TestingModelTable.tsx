@@ -93,7 +93,7 @@ const TestingModelTable = () => {
                     {
                       id: "action-region",
                     },
-                    { action: action.name }
+                    { sound: action.name }
                   )}
                   display="contents"
                 >

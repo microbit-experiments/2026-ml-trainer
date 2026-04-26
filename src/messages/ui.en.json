@@ -238,7 +238,7 @@
   "certainty-tooltip": [
     {
       "type": 0,
-      "value": "How confident the model is that you are currently doing each sound."
+      "value": "How confident the model is that you are currently making each sound."
     }
   ],
   "click-to-reload-page-action": [
@@ -1070,7 +1070,7 @@
   "estimated-action-tooltip": [
     {
       "type": 0,
-      "value": "This is the sound the model thinks you are currently making."
+      "value": "This is the sound the model thinks you are currently doing."
     }
   ],
   "feedback": [
@@ -2490,7 +2490,7 @@
   "record-seconds-help": [
     {
       "type": 0,
-      "value": "Make noise continuously to get "
+      "value": "Continuously record audio to get "
     },
     {
       "type": 1,
@@ -2960,7 +2960,7 @@
   "tour-dataSamples-actions-common-content": [
     {
       "type": 0,
-      "value": "A sound is the type of noise you want the machine learning model to recognise e.g. ‘humming’ or ‘whistling’."
+      "value": "A sound is the type of audio you want the machine learning model to recognise e.g. ‘humming’ or ‘whistling’."
     }
   ],
   "tour-dataSamples-actions-noRecordings-content": [
@@ -2972,19 +2972,19 @@
   "tour-dataSamples-connected-content": [
     {
       "type": 0,
-      "value": "Now you can start collecting data samples to train a machine learning (ML) model to recognise different sounds."
+      "value": "Now you can start collecting data samples to train a machine learning (ML) model to recognise different sounds"
     }
   ],
   "tour-dataSamples-connected-title": [
     {
       "type": 0,
-      "value": "Your data collection micro:bit is connected!"
+      "value": "Your microphone is ready for recording!"
     }
   ],
   "tour-dataSamples-liveGraph-content": [
     {
       "type": 0,
-      "value": "The graph shows audio data from the micro:bit’s microphone. Make noise into your data collection micro:bit and see how the graph changes."
+      "value": "The graph shows audio data from the recording microphone. Try making some noise and see how the graph changes."
     }
   ],
   "tour-makecode-intro-content1": [
@@ -3020,7 +3020,7 @@
   "tour-trainModel-afterTrain-content": [
     {
       "type": 0,
-      "value": "Now test your machine learning model. Try each sound by making noise into your data collection micro:bit. Does the model correctly estimate each sound?"
+      "value": "Now test your machine learning model. Try each sound by making noise into your recording microphone. Does the model correctly estimate each sound?"
     }
   ],
   "tour-trainModel-afterTrain-delayedUntilConnected-title": [
@@ -3076,13 +3076,13 @@
     },
     {
       "type": 0,
-      "value": " to recognise different sounds when you make noise into your micro:bit."
+      "value": " to recognise different sounds while your micro:bit listens."
     }
   ],
   "train-error-body": [
     {
       "type": 0,
-      "value": "The training did not result in a usable model. The reason for this is most likely the data used for training. If the data samples for different sonuds are too similar, this can result in issues in the training process."
+      "value": "The training did not result in a usable model. The reason for this is most likely the data used for training. If the data samples for different sounds are too similar, this can result in issues in the training process."
     }
   ],
   "train-error-header": [

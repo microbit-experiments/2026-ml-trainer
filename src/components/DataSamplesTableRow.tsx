@@ -49,7 +49,7 @@ const DataSamplesTableRow = ({
           {
             id: "action-region",
           },
-          { action: action.name }
+          { sound: action.name }
         )}
         display="contents"
         onFocusCapture={onSelectRow}

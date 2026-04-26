@@ -56,7 +56,7 @@ const PredictedAction = () => {
         <FormattedMessage
           id="estimated-action-aria"
           values={{
-            action:
+            sound:
               liveRegionEstimatedAction ??
               intl.formatMessage({ id: "unknown" }),
           }}

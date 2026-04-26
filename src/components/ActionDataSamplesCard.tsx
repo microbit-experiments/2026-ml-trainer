@@ -94,7 +94,7 @@ const ActionDataSamplesCard = ({
                 {
                   sample: value.recordings.length - idx,
                   numSamples: value.recordings.length,
-                  action: value.name,
+                  sound: value.name,
                 }
               )}
               position="absolute"
@@ -224,7 +224,7 @@ const RecordingArea = ({
             }
             aria-label={intl.formatMessage(
               { id: "record-action-aria" },
-              { action: action.name }
+              { sound: action.name }
             )}
           >
             <FormattedMessage id="record-action" />
@@ -234,7 +234,7 @@ const RecordingArea = ({
             variant={selected ? "record" : "recordOutline"}
             aria-label={intl.formatMessage(
               { id: "recording-options-aria" },
-              { action: action.name }
+              { sound: action.name }
             )}
           />
           <Portal>
@@ -354,7 +354,7 @@ const DataSample = ({
             {
               sample: numRecordings - recordingIndex,
               numSamples: numRecordings,
-              action: actionName,
+              sound: actionName,
             }
           )}
           onClick={handleDelete}

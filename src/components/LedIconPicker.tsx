@@ -46,7 +46,7 @@ const LedIconPicker = ({ actionName, onIconSelected }: LedIconPicker) => {
                 actionName
                   ? intl.formatMessage(
                       { id: "select-icon-action-aria" },
-                      { action: actionName }
+                      { sound: actionName }
                     )
                   : intl.formatMessage({
                       id: "select-icon-action-untitled-aria",

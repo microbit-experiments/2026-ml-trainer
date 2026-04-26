@@ -1444,7 +1444,7 @@
     "description": "Additional recording sound text"
   },
   "record-seconds-help": {
-    "defaultMessage": "make noise continuously to get {numSamples} samples",
+    "defaultMessage": "Continuously record audio to get {numSamples} samples",
     "description": "Help text for additional recording sound"
   },
   "recording": {
@@ -1684,11 +1684,11 @@
     "description": "Tour step content"
   },
   "tour-dataSamples-connected-title": {
-    "defaultMessage": "Your data collection micro:bit is connected!",
+    "defaultMessage": "Your microphone is ready for recording!",
     "description": "Tour step title"
   },
   "tour-dataSamples-liveGraph-content": {
-    "defaultMessage": "The graph shows audio data from the micro:bit’s microphone. Make noise into your data collection micro:bit and see how the graph changes.",
+    "defaultMessage": "The graph shows audio data from the recording microphone. Try making some noise and see how the graph changes.",
     "description": "Tour step content"
   },
   "tour-makecode-intro-content1": {
@@ -1712,7 +1712,7 @@
     "description": "Tour step title"
   },
   "tour-trainModel-afterTrain-content": {
-    "defaultMessage": "Now test your machine learning model. Try each sound by making noise into your data collection micro:bit. Does the model correctly estimate each sound?",
+    "defaultMessage": "Now test your machine learning model. Try each sound by making noise into your recording microphone. Does the model correctly estimate each sound?",
     "description": "Tour step description"
   },
   "tour-trainModel-afterTrain-delayedUntilConnected-title": {

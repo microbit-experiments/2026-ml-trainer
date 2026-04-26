@@ -7,7 +7,6 @@ import { HStack, Icon, Image, Stack, Text } from "@chakra-ui/react";
 import { RiInformationLine } from "react-icons/ri";
 import { FormattedMessage, useIntl } from "react-intl";
 import makecodeBackImage from "./images/makecode-back.png";
-import accelerometerImage from "./images/microbit_xyz_arrows.png";
 import { ActionData, TourStep, TourTrigger, TourTriggerName } from "./model";
 
 const FormattedMessageStepContent = ({ id }: { id: string }) => {
@@ -31,19 +30,11 @@ export const tourElClassname = {
 };
 
 const LiveGraphStep = () => {
-  const intl = useIntl();
   return (
     <HStack gap={5}>
       <Text>
         <FormattedMessage id="tour-dataSamples-liveGraph-content" />
       </Text>
-      <Image
-        src={accelerometerImage}
-        w="150px"
-        aspectRatio={500 / 482}
-        flexShrink={0}
-        alt={intl.formatMessage({ id: "accelerometer-image-alt" })}
-      />
     </HStack>
   );
 };

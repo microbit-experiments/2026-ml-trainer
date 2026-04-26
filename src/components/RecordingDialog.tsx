@@ -44,8 +44,8 @@ export interface RecordingCompleteDetail {
 export interface RecordingDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  actionName: string;
-  actionId: ActionData["ID"];
+  soundName: string;
+  soundId: ActionData["ID"];
   onRecordingComplete: (detail: RecordingCompleteDetail) => void;
   recordingOptions: RecordingOptions;
 }
@@ -59,9 +59,9 @@ enum RecordingStatus {
 
 const RecordingDialog = ({
   isOpen,
-  actionName,
+  soundName,
   onClose,
-  actionId,
+  soundId,
   onRecordingComplete,
   recordingOptions,
 }: RecordingDialogProps) => {
@@ -160,7 +160,7 @@ const RecordingDialog = ({
         const recordingId = Date.now();
         mostRecentRecordingIdRef.current = recordingId;
         recordingCountRef.current++;
-        addActionRecordings(actionId, [{ ID: recordingId, data }]);
+        addActionRecordings(soundId, [{ ID: recordingId, data }]);
         if (continuousRecording && recordingsRemaining) {
           continueRecording();
         } else if (!continuousRecording && recordingsRemaining) {
@@ -197,7 +197,7 @@ const RecordingDialog = ({
     continueRecording,
     continuousRecording,
     decrementRecordingsRemaining,
-    actionId,
+    soundId,
     handleCleanup,
     intl,
     recordingDataSource,
@@ -277,7 +277,7 @@ const RecordingDialog = ({
               <FormattedMessage
                 id="recording-data-for-numbered"
                 values={{
-                  action: actionName,
+                  sound: soundName,
                   sample: currentSampleNumber,
                   numSamples: recordingsToCapture,
                 }}
@@ -285,7 +285,7 @@ const RecordingDialog = ({
             ) : (
               <FormattedMessage
                 id="recording-data-for"
-                values={{ action: actionName }}
+                values={{ sound: soundName }}
               />
             )}
           </ModalHeader>
@@ -389,6 +389,13 @@ const useRecordingDataSource = (): RecordingDataSource => {
             );
             const sampleCount = data.x.length;
             if (sampleCount < dataWindow.minSamples) {
+              console.log(
+                "Only recorded",
+                sampleCount,
+                "out of",
+                dataWindow.minSamples,
+                "samples"
+              );
               ref.current.onError();
               ref.current = undefined;
             } else {

@@ -131,7 +131,7 @@ const ActionNameCard = ({
           borderRadius="sm"
           aria-label={intl.formatMessage(
             { id: "delete-action-aria" },
-            { action: localName }
+            { sound: localName }
           )}
         />
       )}

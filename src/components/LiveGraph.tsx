@@ -13,7 +13,10 @@ import { useConnectActions } from "../connect-actions-hooks";
 import { ConnectionStatus } from "../connect-status-hooks";
 import { useConnectionStage } from "../connection-stage-hooks";
 import { useGraphColors } from "../hooks/use-graph-colors";
-import { maxAmplitudeScaleForGraphs } from "../mlConfig";
+import {
+  minAmplitudeScaleForGraphs,
+  maxAmplitudeScaleForGraphs,
+} from "../mlConfig";
 import { useSettings, useStore } from "../store";
 import { useGraphLineStyles } from "../hooks/use-graph-line-styles";
 import {
@@ -60,7 +63,7 @@ const LiveGraph = () => {
     }
     const smoothieChart = new SmoothieChart({
       maxValue: maxAmplitudeScaleForGraphs,
-      minValue: 0,
+      minValue: minAmplitudeScaleForGraphs,
       millisPerPixel: 7,
       grid: {
         fillStyle: "#ffffff00",
@@ -132,13 +135,13 @@ const LiveGraph = () => {
     if (isRecording) {
       // Set the start recording line
       const now = new Date().getTime();
-      recordLines.append(now - 1, 0, false);
+      recordLines.append(now - 1, minAmplitudeScaleForGraphs, false);
       recordLines.append(now, maxAmplitudeScaleForGraphs, false);
     } else if (prevIsRecording) {
       // Set the end recording line
       const now = new Date().getTime();
       recordLines.append(now - 1, maxAmplitudeScaleForGraphs, false);
-      recordLines.append(now, 0, false);
+      recordLines.append(now, minAmplitudeScaleForGraphs, false);
     }
   }, [isRecording, prevIsRecording, recordLines]);
 
