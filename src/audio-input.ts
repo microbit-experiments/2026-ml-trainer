@@ -38,7 +38,7 @@ export const startAudioStream = (): (() => void) => {
   let audioStream: MediaStream | null = null;
   let processorNode: AudioWorkletNode | null = null;
   let audioCtx: AudioContext | null = null;
-  let analysisInterval: NodeJS.Timeout | null = null;
+  let analysisTimer: NodeJS.Timeout | null = null;
 
   const startStream = async () => {
     try {
@@ -71,12 +71,17 @@ export const startAudioStream = (): (() => void) => {
         const data = e.data as number[];
         const ratio = actualRate / SAMPLE_RATE;
         // Downsample if needed
-        for (let i = 0; i < data.length; i += ratio) {
-          ringBuffer.push(data[Math.floor(i)]);
+        let j = 0;
+        for (let i = 0; i < data.length; i++) {
+          j += 1;
+          while (j >= ratio) {
+            ringBuffer.push(data[i]);
+            j -= ratio;
+          }
         }
         // Keep ring buffer bounded
-        while (ringBuffer.length > maxLen * 2) {
-          ringBuffer.shift();
+        if (ringBuffer.length > maxLen * 2) {
+          ringBuffer.splice(0, ringBuffer.length - maxLen);
         }
       };
 
@@ -84,21 +89,31 @@ export const startAudioStream = (): (() => void) => {
       processorNode.connect(audioCtx.destination);
 
       // Process audio frames every 20ms for smooth live updates
-      analysisInterval = setInterval(() => {
-        if (!isActive || ringBuffer.length < maxLen) return;
+      const startTime = performance.now();
+      let tick = 0;
 
-        try {
-          // Take the last maxLen samples
-          const samples = ringBuffer.slice(-maxLen);
-          const xyz = splitAudioToXYZ(samples, SAMPLE_RATE);
+      const analysisLoop = () => {
+        tick++;
+        if (isActive && ringBuffer.length >= maxLen) {
+          try {
+            // Take the last maxLen samples
+            const samples = ringBuffer.slice(-maxLen);
+            const xyz = splitAudioToXYZ(samples, SAMPLE_RATE);
 
-          // Emit only the last frame to listeners
-          const last = xyz.x.length - 1;
-          XYZStream(xyz.x[last], xyz.y[last], xyz.z[last]);
-        } catch (err) {
-          console.error("Analysis error:", err);
+            // Emit only the last frame to listeners
+            const last = xyz.x.length - 1;
+            XYZStream(xyz.x[last], xyz.y[last], xyz.z[last]);
+          } catch (err) {
+            console.error("Analysis error:", err);
+          }
         }
-      }, 20);
+        analysisTimer = setTimeout(
+          analysisLoop,
+          Math.min(20, startTime + tick * 20 - performance.now())
+        );
+      };
+
+      analysisTimer = setTimeout(analysisLoop, 20);
 
       console.log("Audio stream started");
     } catch (error) {
@@ -112,7 +127,7 @@ export const startAudioStream = (): (() => void) => {
   // Cleanup function
   return () => {
     isActive = false;
-    if (analysisInterval) clearInterval(analysisInterval);
+    if (analysisTimer) clearTimeout(analysisTimer);
     if (processorNode) processorNode.disconnect();
     if (audioStream) audioStream.getTracks().forEach((t) => t.stop());
     if (audioCtx && audioCtx.state !== "closed") {
