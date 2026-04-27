@@ -10,15 +10,19 @@
 
 namespace {
 
-constexpr int STREAM_SAMPLE_RATE = 8000;
-constexpr int SAMPLES_PER_FRAME = 160; // 20 ms chunks at 8 kHz
+constexpr int STREAM_SAMPLE_RATE = 1000;
+constexpr int SAMPLES_PER_FRAME = 20; // 20 ms chunks at 1 kHz
 constexpr int SAMPLE_PERIOD_US = 1000000 / STREAM_SAMPLE_RATE;
+constexpr int MIC_HEALTH_CHECK_INTERVAL_FRAMES = 50;
 
 int16_t toPcm16(uint16_t rawAdc)
 {
-    // Convert expected 12-bit-ish ADC range around midpoint to signed PCM.
-    int32_t centered = static_cast<int32_t>(rawAdc) - 2048;
-    centered <<= 4;
+    // Adapt to unknown ADC midpoint by tracking slow-moving DC offset.
+    static int32_t dc = 0;
+    dc += (static_cast<int32_t>(rawAdc) - dc) >> 4;
+
+    int32_t centered = static_cast<int32_t>(rawAdc) - dc;
+    centered <<= 6;
 
     if (centered > 32767)
         centered = 32767;
@@ -32,25 +36,38 @@ int16_t toPcm16(uint16_t rawAdc)
 
 MicroBit uBit;
 
+static inline void ensureMicActive()
+{
+    if (!uBit.audio.isMicrophoneEnabled() || !uBit.audio.mic->isEnabled())
+    {
+        uBit.audio.activateMic();
+        uBit.audio.mic->enable();
+    }
+}
+
 int main()
 {
     uBit.init();
 
     // Raise serial throughput for continuous audio transfer over USB.
-    uBit.serial.setBaud(1000000);
+    uBit.serial.setBaud(115200);
     uBit.serial.setTxBufferSize(255);
 
-    // Force microphone path on and retune to 8 kHz to match web audio pipeline assumptions.
+    // Configure microphone path for continuous streaming.
     uBit.audio.activateMic();
     uBit.audio.mic->enable();
     uBit.audio.mic->setSampleRate(STREAM_SAMPLE_RATE);
     uBit.audio.mic->setGain(7, 0);
 
     uint16_t sequence = 0;
+    uint32_t frameCounter = 0;
     char frame[4096];
 
     while (true)
     {
+        if ((frameCounter++ % MIC_HEALTH_CHECK_INTERVAL_FRAMES) == 0)
+            ensureMicActive();
+
         int pos = std::snprintf(
             frame,
             sizeof(frame),

@@ -79,40 +79,6 @@ const debugPreview = (value: string, maxLength: number = 120) => {
   return value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
 };
 
-const countChar = (value: string, target: string) => {
-  let count = 0;
-  for (const character of value) {
-    if (character === target) {
-      count += 1;
-    }
-  }
-  return count;
-};
-
-const summarizeTextChunk = (value: string) => {
-  const replacementCount = countChar(value, "\uFFFD");
-  const newlineCount = countChar(value, "\n");
-  const commaCount = countChar(value, ",");
-  const hasPrefix = value.includes(FRAME_PREFIX);
-  const preview = debugPreview(value, 80);
-  const quality =
-    replacementCount > 0
-      ? "contains-replacement-chars"
-      : hasPrefix
-      ? "looks-like-mbaudio-text"
-      : "text-without-prefix";
-
-  return {
-    length: value.length,
-    replacementCount,
-    newlineCount,
-    commaCount,
-    hasPrefix,
-    quality,
-    preview,
-  };
-};
-
 const previewTextBytes = (value: string, maxLength: number = 24) => {
   const bytes = Array.from(value.slice(0, maxLength), (character) =>
     character.charCodeAt(0)
@@ -315,10 +281,6 @@ export const startMicrobitAudioStreamFromUsbConnection = (
   let debugTick = 0;
   let receivedBytes = 0;
   let receivedChunks = 0;
-  let replacementChars = 0;
-  let newlineChars = 0;
-  let commaChars = 0;
-  let prefixHits = 0;
 
   debugAudio("starting USB connection audio stream");
 
@@ -327,18 +289,7 @@ export const startMicrobitAudioStreamFromUsbConnection = (
       return;
     }
 
-    const chunkSummary = summarizeTextChunk(event.data);
-    replacementChars += chunkSummary.replacementCount;
-    newlineChars += chunkSummary.newlineCount;
-    commaChars += chunkSummary.commaCount;
-    if (chunkSummary.hasPrefix) {
-      prefixHits += 1;
-    }
-
-    debugAudio("usb serial chunk summary", {
-      ...chunkSummary,
-      bytePreview: previewTextBytes(event.data),
-    });
+    debugAudio("usb serial chunk preview", previewTextBytes(event.data));
 
     receivedChunks += 1;
     receivedBytes += event.data.length;
@@ -372,10 +323,6 @@ export const startMicrobitAudioStreamFromUsbConnection = (
           ringBufferLength: ringBuffer.length,
           receivedChunks,
           receivedBytes,
-          replacementChars,
-          newlineChars,
-          commaChars,
-          prefixHits,
           pendingPreview: debugPreview(pending),
         });
       }
