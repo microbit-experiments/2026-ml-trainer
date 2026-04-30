@@ -13,7 +13,7 @@
 #include "smileys.h"
 #include "LevelDetectorSPL.h"
 
-#define MICROPHONE_UART_DEBUG 1 
+#define MICROPHONE_UART_DEBUG 0
 #define MICROPHONE_X_SCALE 8
 
 MicroBit uBit;
