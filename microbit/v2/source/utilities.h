@@ -67,6 +67,8 @@ void blink();
 
 void printSmiley(const char * smiley);
 
+void printDebugDisplay();
+
 void printPairPatternAnimated();
 
 void printPairPattern();
