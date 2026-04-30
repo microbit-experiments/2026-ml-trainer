@@ -11,6 +11,10 @@
 #include "MicroBitButtonService.h"
 #include "utilities.h"
 #include "smileys.h"
+#include "LevelDetectorSPL.h"
+
+#define MICROPHONE_UART_DEBUG 1 
+#define MICROPHONE_X_SCALE 8
 
 MicroBit uBit;
 
@@ -83,6 +87,44 @@ void onDelim(MicroBitEvent)
     }
 }
 
+void microphoneDebugLoop()
+{
+#if MICROPHONE_UART_DEBUG
+    if (uBit.audio.levelSPL != NULL)
+        uBit.audio.levelSPL->listenerAdded();
+
+    while (1)
+    {
+        if (uBit.audio.levelSPL != NULL)
+        {
+            float db = uBit.audio.levelSPL->getValue(LEVEL_DETECTOR_SPL_DB);
+            const float dbMin = 35.0f;
+            const float dbMax = 100.0f;
+            float loudness8 = ((db - dbMin) * 255.0f) / (dbMax - dbMin);
+
+            if (loudness8 < 0.0f)
+                loudness8 = 0.0f;
+
+            if (loudness8 > 255.0f)
+                loudness8 = 255.0f;
+
+            int scaledX = (int)loudness8 * MICROPHONE_X_SCALE;
+
+            if (scaledX > 32767)
+                scaledX = 32767;
+
+            uBit.serial.send(
+                ManagedString("dbg_mic db=") + ManagedString((int)db) +
+                ManagedString(" x=") + ManagedString(scaledX) +
+                ManagedString("\r\n")
+            );
+        }
+
+        uBit.sleep(1000);
+    }
+#endif
+}
+
 int main()
 {
     // Initialise the micro:bit runtime.
@@ -101,6 +143,10 @@ int main()
     io = new MicroBitIOPinService(*uBit.ble, uBit.io);
     btn = new MicroBitButtonService(*uBit.ble);
     microphone = new MicroBitMicrophoneService(*uBit.ble, uBit.audio);
+
+#if MICROPHONE_UART_DEBUG
+    create_fiber(microphoneDebugLoop);
+#endif
 
     uart->eventOn("#");
 
