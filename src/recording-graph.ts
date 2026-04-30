@@ -7,7 +7,10 @@
 
 import { ChartConfiguration, ChartTypeRegistry } from "chart.js";
 import { GraphLineStyles } from "./hooks/use-graph-line-styles";
-import { maxAmplitudeScaleForGraphs } from "./mlConfig";
+import {
+  minAmplitudeScaleForGraphs,
+  maxAmplitudeScaleForGraphs,
+} from "./mlConfig";
 import { XYZData } from "./model";
 import { GraphLineWeight } from "./settings";
 
@@ -123,7 +126,7 @@ export const getConfig = (
         },
         y: {
           type: "linear",
-          min: 0,
+          min: minAmplitudeScaleForGraphs,
           max: maxAmplitudeScaleForGraphs,
           grid: {
             drawTicks: false,

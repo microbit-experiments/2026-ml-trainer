@@ -226,7 +226,7 @@ const DataSamplesTable = ({
                 <FormattedMessage
                   id="delete-action-confirm-text"
                   values={{
-                    action: selectedAction.name,
+                    sound: selectedAction.name,
                   }}
                 />
               </Text>
@@ -238,10 +238,10 @@ const DataSamplesTable = ({
             onCancel={closeDialog}
           />
           <RecordingDialog
-            actionId={selectedAction.ID}
+            soundId={selectedAction.ID}
             isOpen={isRecordingDialogOpen}
             onClose={closeDialog}
-            actionName={selectedAction.name}
+            soundName={selectedAction.name}
             onRecordingComplete={handleRecordingComplete}
             recordingOptions={recordingOptions}
           />

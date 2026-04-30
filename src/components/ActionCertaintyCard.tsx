@@ -87,7 +87,7 @@ const ActionCertaintyCard = ({
               {
                 id: "certainty-percentage-label",
               },
-              { currentConfidence, action: actionName }
+              { currentConfidence, sound: actionName }
             )}
             value={currentConfidence}
             colorScheme={colorScheme}

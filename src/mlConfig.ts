@@ -127,9 +127,9 @@ const rms: FilterStrategy = (d) => _rms(d);
 // Max acceleration the micro:bit can detect.
 // https://microbit-challenges.readthedocs.io/en/latest/tutorials/accelerometer.html#basic-functions
 export const maxAcceleration = 2.048;
-export const maxAccelerationScaleForGraphs = 2.2;
 
-export const maxAmplitudeScaleForGraphs = 1;
+export const maxAmplitudeScaleForGraphs = 1.1;
+export const minAmplitudeScaleForGraphs = -0.1;
 
 export const getMlFilters = (
   dataWindow: DataWindow
