@@ -53,7 +53,7 @@ void onConnected(MicroBitEvent)
     uart->send(ManagedString("id_prop")); // MUST be sent before vi_ message
     uart->send(ManagedString("vi_") + ManagedString(buildNumber));
 
-    printSmiley(GLAD_SMILEY);
+    printDebugDisplay();
 }
 
 /**
@@ -63,7 +63,7 @@ void onDisconnected(MicroBitEvent)
 {
     connected = 0; // Set the connected flag
     
-    printSmiley(SAD_SMILEY);
+    printDebugDisplay();
 
     uBit.sleep(2000);
     printPairPattern();
@@ -104,14 +104,22 @@ int main()
 
     uart->eventOn("#");
 
-    printSmiley(GLAD_SMILEY);
+    printDebugDisplay();
 
     uBit.sleep(400);
     if (!connected) {
         printPairPatternAnimated();
     }
     if (connected) {
-        printSmiley(GLAD_SMILEY);
+        printDebugDisplay();
     }
+
+    // Continuously refresh the debug display every 50ms
+    while (true) {
+        printDebugDisplay();
+        uBit.sleep(50);
+    }
+
     release_fiber();
 }
+
