@@ -125,11 +125,17 @@ export const computeActiveRms = (
 
   let start = samples.length;
   for (let i = 0; i + winLen <= samples.length; i += winLen) {
-    if (winRms(i) > threshold) { start = i; break; }
+    if (winRms(i) > threshold) {
+      start = i;
+      break;
+    }
   }
   let end = 0;
   for (let i = samples.length - winLen; i >= 0; i -= winLen) {
-    if (winRms(i) > threshold) { end = Math.min(samples.length, i + winLen); break; }
+    if (winRms(i) > threshold) {
+      end = Math.min(samples.length, i + winLen);
+      break;
+    }
   }
 
   if (start >= end) return rms(samples);
@@ -275,9 +281,16 @@ export const splitAudioToXYZ = (
   } = opts;
   let processed = samples;
   // Compute active RMS before trimming so zero-padding doesn't dilute the gain.
-  const refRms = normalize && trim ? computeActiveRms(samples, sampleRate) : undefined;
+  const refRms =
+    normalize && trim ? computeActiveRms(samples, sampleRate) : undefined;
   if (trim) processed = trimAndCenter(processed, sampleRate);
-  if (normalize) processed = normalizeClip(processed, AUDIO_TARGET_RMS, AUDIO_MAX_NORMALIZE_GAIN, refRms);
+  if (normalize)
+    processed = normalizeClip(
+      processed,
+      AUDIO_TARGET_RMS,
+      AUDIO_MAX_NORMALIZE_GAIN,
+      refRms
+    );
   if (preEmphasis) processed = preEmphasize(processed);
   const low = applyBiquad(processed, lowPassCoeffs(lowCutoff, sampleRate));
   const high = applyBiquad(processed, highPassCoeffs(highCutoff, sampleRate));
@@ -311,9 +324,16 @@ export const splitAudioToBands = (
   } = opts;
   let processed = samples;
   // Compute active RMS before trimming so zero-padding doesn't dilute the gain.
-  const refRms = normalize && trim ? computeActiveRms(samples, sampleRate) : undefined;
+  const refRms =
+    normalize && trim ? computeActiveRms(samples, sampleRate) : undefined;
   if (trim) processed = trimAndCenter(processed, sampleRate);
-  if (normalize) processed = normalizeClip(processed, AUDIO_TARGET_RMS, AUDIO_MAX_NORMALIZE_GAIN, refRms);
+  if (normalize)
+    processed = normalizeClip(
+      processed,
+      AUDIO_TARGET_RMS,
+      AUDIO_MAX_NORMALIZE_GAIN,
+      refRms
+    );
   if (preEmphasis) processed = preEmphasize(processed);
 
   const n = cutoffs.length;

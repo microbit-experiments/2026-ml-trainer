@@ -1,612 +1,924 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Audio ML Test</title>
-  <link rel="stylesheet" href="audio-test.css">
-</head>
-<body>
-  <h1>Audio ML Test</h1>
-  <p>Record samples for 2+ classes, train, then predict live.</p>
+  <head>
+    <meta charset="utf-8" />
+    <title>Audio ML Test</title>
+    <link rel="stylesheet" href="audio-test.css" />
+  </head>
+  <body>
+    <h1>Audio ML Test</h1>
+    <p>Record samples for 2+ classes, train, then predict live.</p>
 
-  <div>
-    <input id="className" placeholder="Class name" value="">
-    <button onclick="addClass()">Add class</button>
-  </div>
-  <div id="classes"></div>
+    <div>
+      <input id="className" placeholder="Class name" value="" />
+      <button onclick="addClass()">Add class</button>
+    </div>
+    <div id="classes"></div>
 
-  <hr>
-  <button id="trainBtn" onclick="train()" disabled>Train model</button>
-  <button id="predictBtn" onclick="togglePredict()" disabled>Start predicting</button>
-  <div id="results"></div>
-  <hr>
-  <div id="log"></div>
+    <hr />
+    <button id="trainBtn" onclick="train()" disabled>Train model</button>
+    <button id="predictBtn" onclick="togglePredict()" disabled>
+      Start predicting
+    </button>
+    <div id="results"></div>
+    <hr />
+    <div id="log"></div>
 
-<script>
-// Config (mirrors audioConfig.ts)
-const SAMPLE_RATE      = 8000;
-const DURATION_MS      = 990;
-const BAND_CUTOFFS     = [400, 800, 1500, 2500];
-const LDA_K            = 7;
-const LDA_PRE_PCA_DIM  = 90;
-const LDA_LAMBDA       = 0.3;
-const TARGET_RMS       = 0.1;
-const MAX_NORMALIZE_GAIN = 20;
-const PRE_EMPHASIS_A   = 0.97;
-const BAND_FRAME_MS    = 25;
-const BAND_HOP_MS      = 10;
-const TRIM_THRESH      = 0.01;
-const TRIM_WIN_MS      = 25;
-const TRIM_HANG_MS     = 100;
-const MFCC_COEFFS      = 10;
-const MFCC_FILTERS     = 26;
-const MFCC_FFT         = 256;
-const MFCC_FRAME_MS    = 25;
-const MFCC_HOP_MS      = 10;
-const MFCC_LOW_HZ      = 0;
-const MFCC_LIFTER      = 22;
+    <script>
+      // Config (mirrors audioConfig.ts)
+      const SAMPLE_RATE = 8000;
+      const DURATION_MS = 990;
+      const BAND_CUTOFFS = [400, 800, 1500, 2500];
+      const LDA_K = 7;
+      const LDA_PRE_PCA_DIM = 90;
+      const LDA_LAMBDA = 0.3;
+      const TARGET_RMS = 0.1;
+      const MAX_NORMALIZE_GAIN = 20;
+      const PRE_EMPHASIS_A = 0.97;
+      const BAND_FRAME_MS = 25;
+      const BAND_HOP_MS = 10;
+      const TRIM_THRESH = 0.01;
+      const TRIM_WIN_MS = 25;
+      const TRIM_HANG_MS = 100;
+      const MFCC_COEFFS = 10;
+      const MFCC_FILTERS = 26;
+      const MFCC_FFT = 256;
+      const MFCC_FRAME_MS = 25;
+      const MFCC_HOP_MS = 10;
+      const MFCC_LOW_HZ = 0;
+      const MFCC_LIFTER = 22;
 
-let classes = [];          // [{ name, recordings: number[][] }]
-let model   = null;        // { znorm, lda, centroids, classNames }
-let predicting    = false;
-let predictTimer  = null;
-let audioCtx      = null;
-let liveStream    = null;
-let liveProcessor = null;
-let liveSource    = null;
-let liveRingBuf   = null;
-let liveWriteIdx  = 0;
+      let classes = []; // [{ name, recordings: number[][] }]
+      let model = null; // { znorm, lda, centroids, classNames }
+      let predicting = false;
+      let predictTimer = null;
+      let audioCtx = null;
+      let liveStream = null;
+      let liveProcessor = null;
+      let liveSource = null;
+      let liveRingBuf = null;
+      let liveWriteIdx = 0;
 
-function log(msg) {
-  const el = document.getElementById('log');
-  el.textContent += msg + '\n';
-  el.scrollTop = el.scrollHeight;
-}
-
-function applyBiquad(samples, c) {
-  const out = new Float64Array(samples.length);
-  let x1=0, x2=0, y1=0, y2=0;
-  for (let i = 0; i < samples.length; i++) {
-    const x0 = samples[i];
-    const y0 = (c.b0*x0 + c.b1*x1 + c.b2*x2 - c.a1*y1 - c.a2*y2) / c.a0;
-    out[i] = y0;  x2=x1; x1=x0; y2=y1; y1=y0;
-  }
-  return out;
-}
-function lowPassCoeffs(hz, sr) {
-  const w0=2*Math.PI*hz/sr, a=Math.sin(w0)/(2*Math.SQRT2), cw=Math.cos(w0);
-  return { b0:(1-cw)/2, b1:1-cw, b2:(1-cw)/2, a0:1+a, a1:-2*cw, a2:1-a };
-}
-function highPassCoeffs(hz, sr) {
-  const w0=2*Math.PI*hz/sr, a=Math.sin(w0)/(2*Math.SQRT2), cw=Math.cos(w0);
-  return { b0:(1+cw)/2, b1:-(1+cw), b2:(1+cw)/2, a0:1+a, a1:-2*cw, a2:1-a };
-}
-
-function rms(arr) {
-  if (!arr.length) return 0;
-  return Math.sqrt(arr.reduce((s,v) => s+v*v, 0) / arr.length);
-}
-function computeActiveRms(samples, sr) {
-  const wLen = Math.max(1, Math.round(TRIM_WIN_MS/1000*sr));
-  function winRms(i) {
-    const e=Math.min(i+wLen,samples.length); let s=0;
-    for (let j=i; j<e; j++) s+=samples[j]*samples[j];
-    return Math.sqrt(s/Math.max(e-i,1));
-  }
-  let start=samples.length;
-  for (let i=0; i+wLen<=samples.length; i+=wLen)
-    if (winRms(i)>TRIM_THRESH) { start=i; break; }
-  let end=0;
-  for (let i=samples.length-wLen; i>=0; i-=wLen)
-    if (winRms(i)>TRIM_THRESH) { end=Math.min(samples.length, i+wLen); break; }
-  if (start>=end) return rms(samples);
-  return rms(samples.slice(start, end));
-}
-function normalizeClip(samples, refRms) {
-  const r = refRms !== undefined ? refRms : rms(samples);
-  if (r < 1e-6) return samples.slice();
-  const g = Math.min(TARGET_RMS / r, MAX_NORMALIZE_GAIN);
-  return Array.from(samples, v => v*g);
-}
-function preEmphasize(samples) {
-  const out = new Float64Array(samples.length);
-  out[0] = samples[0];
-  for (let i=1; i<samples.length; i++) out[i] = samples[i] - PRE_EMPHASIS_A*samples[i-1];
-  return out;
-}
-function frameRms(samples, sr, frameMs, hopMs) {
-  const fLen = Math.max(1, Math.round(frameMs/1000*sr));
-  const hLen = Math.max(1, Math.round(hopMs/1000*sr));
-  const out = [];
-  for (let s=0; s<samples.length; s+=hLen) {
-    const e = Math.min(s+fLen, samples.length);
-    let sum=0; for (let i=s; i<e; i++) sum+=samples[i]*samples[i];
-    out.push(Math.sqrt(sum/Math.max(e-s,1)));
-    if (e===samples.length) break;
-  }
-  return out;
-}
-function trimAndCenter(samples, sr) {
-  const wLen = Math.max(1, Math.round(TRIM_WIN_MS/1000*sr));
-  const hang = Math.round(TRIM_HANG_MS/1000*sr);
-  function winRms(i) {
-    const e=Math.min(i+wLen,samples.length); let s=0;
-    for (let j=i; j<e; j++) s+=samples[j]*samples[j];
-    return Math.sqrt(s/Math.max(e-i,1));
-  }
-  let start=samples.length;
-  for (let i=0; i+wLen<=samples.length; i+=wLen)
-    if (winRms(i)>TRIM_THRESH) { start=Math.max(0,i-wLen); break; }
-  let end=0;
-  for (let i=samples.length-wLen; i>=0; i-=wLen)
-    if (winRms(i)>TRIM_THRESH) { end=Math.min(samples.length, i+wLen+hang); break; }
-  if (start>=end) return samples.slice();
-  const content = samples.slice(start, end);
-  if (content.length>=samples.length) return samples.slice();
-  const padTotal = samples.length - content.length;
-  const padL = Math.floor(padTotal/2);
-  return [...new Array(padL).fill(0), ...content, ...new Array(padTotal-padL).fill(0)];
-}
-
-function splitAudioToBands(rawSamples, sr, doTrim) {
-  let p = rawSamples.slice();
-  const refRms = doTrim ? computeActiveRms(p, sr) : undefined;
-  if (doTrim) p = trimAndCenter(p, sr);
-  p = normalizeClip(p, refRms);
-  p = Array.from(preEmphasize(p));
-  const cuts = BAND_CUTOFFS, n = cuts.length;
-  const raw = [];
-  raw.push(applyBiquad(p, lowPassCoeffs(cuts[0], sr)));
-  for (let i=0; i<n-1; i++) {
-    const hp = applyBiquad(p, highPassCoeffs(cuts[i], sr));
-    raw.push(applyBiquad(hp, lowPassCoeffs(cuts[i+1], sr)));
-  }
-  raw.push(applyBiquad(p, highPassCoeffs(cuts[n-1], sr)));
-  return raw.map(b => frameRms(b, sr, BAND_FRAME_MS, BAND_HOP_MS));
-}
-
-function _sf(data) {   // spectral rolloff + flatness
-  if (data.length<=1) return [0,0];
-  const pwr = data.map(v=>v*v), eps=1e-12;
-  const tot = pwr.reduce((a,b)=>a+b,0); if (tot<=eps) return [0,0];
-  let cum=0, roll=1;
-  for (let i=0; i<pwr.length; i++) { cum+=pwr[i]; if(cum>=0.85*tot){roll=i/(pwr.length-1);break;} }
-  const aM = tot/pwr.length;
-  const flat = Math.min(1, Math.exp(pwr.reduce((a,b)=>a+Math.log(b+eps),0)/pwr.length)/aM);
-  return [roll, flat];
-}
-function _pearson(a, b) {
-  const n=Math.min(a.length,b.length); if(!n) return 0;
-  let sA=0,sB=0; for(let i=0;i<n;i++){sA+=a[i];sB+=b[i];}
-  const mA=sA/n, mB=sB/n;
-  let cov=0,vA=0,vB=0;
-  for(let i=0;i<n;i++){const da=a[i]-mA,db=b[i]-mB;cov+=da*db;vA+=da*da;vB+=db*db;}
-  const d=Math.sqrt(vA)*Math.sqrt(vB); return d<1e-12?0:cov/d;
-}
-function _env(ax) {
-  if(!ax.length) return {a:0,d:0,c:0};
-  let pi=0,pv=ax[0]; for(let i=1;i<ax.length;i++) if(ax[i]>pv){pv=ax[i];pi=i;}
-  const attack = pi/Math.max(ax.length-1,1);
-  let decay=0;
-  if(pi<ax.length-1&&pv>1e-12){
-    let sd=0; for(let i=pi+1;i<ax.length;i++) sd+=(pv-ax[i])/pv;
-    decay=sd/Math.max(ax.length-pi-1,1);
-  }
-  let ws=0,wt=0; for(let i=0;i<ax.length;i++){ws+=i*ax[i];wt+=ax[i];}
-  const cent = wt>1e-12?ws/wt/Math.max(ax.length-1,1):0.5;
-  return {a:attack, d:decay, c:cent};
-}
-function _mean(d) { return d.reduce((a,b)=>a+b,0)/d.length; }
-function _std(d)  { const m=_mean(d); return Math.sqrt(d.reduce((a,b)=>a+(b-m)**2,0)/d.length); }
-function _peaks(data) {
-  const lag=5, thr=3.5, inf=0.5;
-  if(data.length<lag+2) return 0;
-  let cnt=0; const fy=data.slice();
-  const aF=[], sF=[];
-  aF[lag-1]=_mean(data.slice(0,lag)); sF[lag-1]=aF[lag-1];
-  for(let i=lag;i<data.length;i++){
-    if(Math.abs(data[i]-aF[i-1])>0.1&&Math.abs(data[i]-aF[i-1])>thr*sF[i-1]){
-      if(data[i]>aF[i-1]&&i-1>0&&(i<2||fy[i-1]===data[i-1])) cnt++;
-      fy[i]=inf*data[i]+(1-inf)*fy[i-1];
-    } else { fy[i]=data[i]; }
-    const l=fy.slice(i-lag,i); aF[i]=_mean(l); sF[i]=_std(l);
-  }
-  return cnt;
-}
-function extractNBandFeatures(bands) {
-  const feats=[], nb=bands.length;
-  for(const b of bands){
-    feats.push(Math.max(...b));
-    feats.push(_mean(b)); feats.push(_std(b)); feats.push(_peaks(b));
-    feats.push((b.reduce((a,v)=>a+Math.abs(v),0)/b.length)*SAMPLE_RATE);
-    feats.push(..._sf(b));
-    const e=_env(b); feats.push(e.a,e.d,e.c);
-  }
-  for(let i=0;i<nb;i++) for(let j=i+1;j<nb;j++) feats.push(_pearson(bands[i],bands[j]));
-  const br=bands.map(b=>rms(b)), tr=br.reduce((a,b)=>a+b,0)+1e-12;
-  for(const r of br) feats.push(r/tr);
-  return feats;
-}
-
-function _fft(re, im) {
-  const n=re.length;
-  for(let i=1,j=0;i<n;i++){
-    let bit=n>>1; while(j&bit){j^=bit;bit>>=1;} j^=bit;
-    if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}
-  }
-  for(let len=2;len<=n;len<<=1){
-    const h=len>>1,ang=-2*Math.PI/len,wR=Math.cos(ang),wI=Math.sin(ang);
-    for(let i=0;i<n;i+=len){
-      let cR=1,cI=0;
-      for(let j=0;j<h;j++){
-        const a=i+j,b=a+h;
-        const tR=cR*re[b]-cI*im[b],tI=cR*im[b]+cI*re[b];
-        re[b]=re[a]-tR; im[b]=im[a]-tI; re[a]+=tR; im[a]+=tI;
-        const nr=cR*wR-cI*wI; cI=cR*wI+cI*wR; cR=nr;
+      function log(msg) {
+        const el = document.getElementById("log");
+        el.textContent += msg + "\n";
+        el.scrollTop = el.scrollHeight;
       }
-    }
-  }
-}
-function _pwrSpec(frame, sz) {
-  const re=new Float64Array(sz),im=new Float64Array(sz);
-  re.set(frame.subarray(0,Math.min(frame.length,sz)));
-  _fft(re,im);
-  const nb=(sz>>1)+1, pw=new Float64Array(nb);
-  for(let i=0;i<nb;i++) pw[i]=re[i]*re[i]+im[i]*im[i];
-  return pw;
-}
-function _melBank(nF, fftSz, sr, lHz, hHz) {
-  const nb=(fftSz>>1)+1;
-  const lM=2595*Math.log10(1+lHz/700), hM=2595*Math.log10(1+hHz/700);
-  const pts=Array.from({length:nF+2},(_,i)=>lM+(hM-lM)*i/(nF+1));
-  const bins=pts.map(m=>Math.floor((fftSz+1)*700*(10**(m/2595)-1)/sr));
-  return Array.from({length:nF},(_,i)=>{
-    const f=new Float64Array(nb),l=bins[i],c=bins[i+1],r=bins[i+2];
-    for(let j=l;j<c&&j<nb;j++) f[j]=(j-l)/Math.max(c-l,1);
-    for(let j=c;j<=r&&j<nb;j++) f[j]=(r-j)/Math.max(r-c,1);
-    return f;
-  });
-}
-function _dct(inp, nOut) {
-  const n=inp.length, out=new Float64Array(nOut);
-  for(let k=0;k<nOut;k++){
-    let s=0; for(let i=0;i<n;i++) s+=inp[i]*Math.cos(Math.PI*k*(i+0.5)/n);
-    out[k]=s;
-  }
-  return out;
-}
-function extractMfccSummary(samples, sr) {
-  const em=new Float64Array(samples.length);
-  em[0]=samples[0];
-  for(let i=1;i<samples.length;i++) em[i]=samples[i]-PRE_EMPHASIS_A*samples[i-1];
-  const fLen=Math.round(MFCC_FRAME_MS/1000*sr);
-  const hLen=Math.round(MFCC_HOP_MS/1000*sr);
-  const win=new Float64Array(fLen);
-  for(let i=0;i<fLen;i++) win[i]=0.5*(1-Math.cos(2*Math.PI*i/(fLen-1)));
-  const bank=_melBank(MFCC_FILTERS, MFCC_FFT, sr, MFCC_LOW_HZ, sr/2);
-  const lift=new Float64Array(MFCC_COEFFS);
-  for(let i=0;i<MFCC_COEFFS;i++) lift[i]=MFCC_LIFTER>0?1+(MFCC_LIFTER/2)*Math.sin(Math.PI*i/MFCC_LIFTER):1;
-  const frames=[];
-  for(let s=0;s+fLen<=em.length;s+=hLen){
-    const wnd=new Float64Array(fLen);
-    for(let i=0;i<fLen;i++) wnd[i]=em[s+i]*win[i];
-    const pw=_pwrSpec(wnd, MFCC_FFT);
-    const mel=new Float64Array(MFCC_FILTERS);
-    for(let f=0;f<MFCC_FILTERS;f++){let s2=0;for(let j=0;j<pw.length;j++) s2+=pw[j]*bank[f][j];mel[f]=Math.log(Math.max(s2,1e-22));}
-    const m=_dct(mel, MFCC_COEFFS);
-    for(let i=0;i<MFCC_COEFFS;i++) m[i]*=lift[i];
-    frames.push(m);
-  }
-  if(!frames.length){ const z=new Array(MFCC_COEFFS).fill(0); return [...z,...z,...z,...z]; }
-  const nF=frames.length;
-  const nSeg=2;
-  const segLen=Math.ceil(nF/nSeg);
-  const out=[];
-  for(let s=0;s<nSeg;s++){
-    const start=s*segLen, end=Math.min(start+segLen,nF);
-    const cnt=end-start;
-    const means=new Float64Array(MFCC_COEFFS), stds=new Float64Array(MFCC_COEFFS);
-    for(let c=0;c<MFCC_COEFFS;c++){
-      let sm=0; for(let f=start;f<end;f++) sm+=frames[f][c]; means[c]=sm/cnt;
-    }
-    for(let c=0;c<MFCC_COEFFS;c++){
-      let sv=0; for(let f=start;f<end;f++){const d=frames[f][c]-means[c];sv+=d*d;} stds[c]=Math.sqrt(sv/cnt);
-    }
-    out.push(...Array.from(means),...Array.from(stds));
-  }
-  return out;
-}
 
-function extractFeatures(rawSamples) {
-  const bands = splitAudioToBands(rawSamples, SAMPLE_RATE, true);
-  const bandF = extractNBandFeatures(bands);
-  const mfccRefRms = computeActiveRms(rawSamples, SAMPLE_RATE);
-  let proc = trimAndCenter(rawSamples.slice(), SAMPLE_RATE);
-  proc = normalizeClip(proc, mfccRefRms);
-  const mfccF = extractMfccSummary(proc, SAMPLE_RATE);
-  return [...bandF, ...mfccF];   // 65 + 40 = 105
-}
-
-function fitZNorm(features) {
-  if(!features.length) return {means:[],stds:[]};
-  const d=features[0].length, n=features.length;
-  const means=new Array(d).fill(0), stds=new Array(d).fill(0);
-  for(let j=0;j<d;j++){let s=0;for(let i=0;i<n;i++) s+=features[i][j];means[j]=s/n;}
-  for(let j=0;j<d;j++){let s=0;for(let i=0;i<n;i++){const v=features[i][j]-means[j];s+=v*v;}stds[j]=Math.sqrt(s/n);}
-  return {means,stds};
-}
-function applyZNorm(f, z) {
-  return f.map((v,i)=>z.stds[i]>1e-12?(v-z.means[i])/z.stds[i]:0);
-}
-function fitPca(features, k) {
-  const n=features.length, d=features[0].length;
-  const mean=new Array(d).fill(0);
-  for(const f of features) for(let j=0;j<d;j++) mean[j]+=f[j];
-  for(let j=0;j<d;j++) mean[j]/=n;
-  const C=features.map(f=>f.map((v,j)=>v-mean[j]));
-  const def=C.map(r=>r.slice()), comps=[];
-  for(let c=0;c<k;c++){
-    let vec=Array.from({length:d},()=>Math.random()-0.5);
-    for(let it=0;it<100;it++){
-      const proj=def.map(r=>{let s=0;for(let j=0;j<d;j++) s+=r[j]*vec[j];return s;});
-      const nv=new Array(d).fill(0);
-      for(let i=0;i<n;i++) for(let j=0;j<d;j++) nv[j]+=def[i][j]*proj[i];
-      let nm=0;for(let j=0;j<d;j++) nm+=nv[j]*nv[j];nm=Math.sqrt(nm)||1;
-      for(let j=0;j<d;j++) nv[j]/=nm;
-      let dot=0;for(let j=0;j<d;j++) dot+=vec[j]*nv[j];
-      vec=nv; if(Math.abs(dot)>1-1e-10) break;
-    }
-    comps.push(vec);
-    for(let i=0;i<n;i++){
-      let p=0;for(let j=0;j<d;j++) p+=def[i][j]*vec[j];
-      for(let j=0;j<d;j++) def[i][j]-=p*vec[j];
-    }
-  }
-  return {mean,components:comps,nComponents:k};
-}
-function applyPca(f, pca) {
-  const c=f.map((v,j)=>v-pca.mean[j]);
-  return pca.components.map(comp=>{let s=0;for(let j=0;j<comp.length;j++) s+=c[j]*comp[j];return s;});
-}
-function invertMatrix(A) {
-  const n=A.length;
-  const aug=A.map((r,i)=>r.slice().concat(Array.from({length:n},(_,j)=>i===j?1:0)));
-  for(let col=0;col<n;col++){
-    let pr=col;
-    for(let r=col+1;r<n;r++) if(Math.abs(aug[r][col])>Math.abs(aug[pr][col])) pr=r;
-    if(Math.abs(aug[pr][col])<1e-12) return Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
-    [aug[col],aug[pr]]=[aug[pr],aug[col]];
-    const sc=aug[col][col];
-    for(let j=0;j<2*n;j++) aug[col][j]/=sc;
-    for(let r=0;r<n;r++){
-      if(r===col) continue;
-      const fac=aug[r][col];
-      for(let j=0;j<2*n;j++) aug[r][j]-=fac*aug[col][j];
-    }
-  }
-  return aug.map(r=>r.slice(n));
-}
-function fitLda(normFeatures, labels, k, prePcaDim, lambda) {
-  let feats=normFeatures, prePca=null;
-  if(prePcaDim>0&&prePcaDim<normFeatures[0].length){
-    prePca=fitPca(normFeatures,prePcaDim);
-    feats=normFeatures.map(f=>applyPca(f,prePca));
-  }
-  const n=feats.length, d=feats[0].length;
-  const cls=[...new Set(labels)].sort((a,b)=>a-b), C=cls.length;
-  const kA=Math.min(k,C-1);
-  if(kA<=0) return {prePca,mean:new Array(d).fill(0),components:[]};
-  const gm=new Array(d).fill(0);
-  for(const f of feats) for(let i=0;i<d;i++) gm[i]+=f[i];
-  for(let i=0;i<d;i++) gm[i]/=n;
-  const cM=[], cN=[];
-  for(const c of cls){
-    const m=new Array(d).fill(0); let cnt=0;
-    for(let i=0;i<n;i++) if(labels[i]===c){for(let j=0;j<d;j++) m[j]+=feats[i][j];cnt++;}
-    for(let j=0;j<d;j++) m[j]/=cnt;
-    cM.push(m); cN.push(cnt);
-  }
-  const Sw=Array.from({length:d},()=>new Array(d).fill(0));
-  for(let i=0;i<n;i++){
-    const ci=cls.indexOf(labels[i]);
-    for(let r=0;r<d;r++){
-      const dr=feats[i][r]-cM[ci][r];
-      for(let c=0;c<d;c++) Sw[r][c]+=dr*(feats[i][c]-cM[ci][c]);
-    }
-  }
-  if(lambda>0){
-    let tr=0;for(let i=0;i<d;i++) tr+=Sw[i][i];
-    const reg=lambda*tr/d;
-    for(let i=0;i<d;i++){for(let j=0;j<d;j++) Sw[i][j]*=(1-lambda);Sw[i][i]+=reg;}
-  }
-  const SwI=invertMatrix(Sw);
-  const comps=[];
-  for(let comp=0;comp<kA;comp++){
-    let vec=Array.from({length:d},()=>Math.random()-0.5);
-    for(let it=0;it<150;it++){
-      const Sbv=new Array(d).fill(0);
-      for(let ci=0;ci<C;ci++){
-        let dot=0;for(let j=0;j<d;j++) dot+=(cM[ci][j]-gm[j])*vec[j];
-        for(let j=0;j<d;j++) Sbv[j]+=cN[ci]*dot*(cM[ci][j]-gm[j]);
+      function applyBiquad(samples, c) {
+        const out = new Float64Array(samples.length);
+        let x1 = 0,
+          x2 = 0,
+          y1 = 0,
+          y2 = 0;
+        for (let i = 0; i < samples.length; i++) {
+          const x0 = samples[i];
+          const y0 =
+            (c.b0 * x0 + c.b1 * x1 + c.b2 * x2 - c.a1 * y1 - c.a2 * y2) / c.a0;
+          out[i] = y0;
+          x2 = x1;
+          x1 = x0;
+          y2 = y1;
+          y1 = y0;
+        }
+        return out;
       }
-      const nv=new Array(d).fill(0);
-      for(let r=0;r<d;r++) for(let c=0;c<d;c++) nv[r]+=SwI[r][c]*Sbv[c];
-      for(const prev of comps){let dt=0;for(let j=0;j<d;j++) dt+=nv[j]*prev[j];for(let j=0;j<d;j++) nv[j]-=dt*prev[j];}
-      let nm=0;for(let j=0;j<d;j++) nm+=nv[j]*nv[j];nm=Math.sqrt(nm)||1;
-      let dc=0;for(let j=0;j<d;j++) dc+=(nv[j]/nm)*vec[j];
-      vec=nv.map(v=>v/nm);
-      if(Math.abs(dc)>1-1e-8) break;
-    }
-    comps.push(vec);
-  }
-  return {prePca,mean:gm,components:comps};
-}
-function applyLda(f, lda) {
-  const v=lda.prePca?applyPca(f,lda.prePca):f;
-  return lda.components.map(comp=>{let s=0;for(let i=0;i<comp.length;i++) s+=(v[i]-lda.mean[i])*comp[i];return s;});
-}
-function cosineDistance(a, b) {
-  let dot=0, nA=0, nB=0;
-  for(let i=0;i<a.length;i++){dot+=a[i]*b[i];nA+=a[i]*a[i];nB+=b[i]*b[i];}
-  const d=Math.sqrt(nA)*Math.sqrt(nB);
-  return d<1e-12?1:1-dot/d;
-}
+      function lowPassCoeffs(hz, sr) {
+        const w0 = (2 * Math.PI * hz) / sr,
+          a = Math.sin(w0) / (2 * Math.SQRT2),
+          cw = Math.cos(w0);
+        return {
+          b0: (1 - cw) / 2,
+          b1: 1 - cw,
+          b2: (1 - cw) / 2,
+          a0: 1 + a,
+          a1: -2 * cw,
+          a2: 1 - a,
+        };
+      }
+      function highPassCoeffs(hz, sr) {
+        const w0 = (2 * Math.PI * hz) / sr,
+          a = Math.sin(w0) / (2 * Math.SQRT2),
+          cw = Math.cos(w0);
+        return {
+          b0: (1 + cw) / 2,
+          b1: -(1 + cw),
+          b2: (1 + cw) / 2,
+          a0: 1 + a,
+          a1: -2 * cw,
+          a2: 1 - a,
+        };
+      }
 
-function renderClasses() {
-  const el = document.getElementById('classes');
-  el.innerHTML = '';
-  classes.forEach((cls, ci) => {
-    const div = document.createElement('div');
-    div.className = 'class-box';
-    div.innerHTML = `
-      <h3>${cls.name} (${cls.recordings.length} sample${cls.recordings.length!==1?'s':''})</h3>
+      function rms(arr) {
+        if (!arr.length) return 0;
+        return Math.sqrt(arr.reduce((s, v) => s + v * v, 0) / arr.length);
+      }
+      function computeActiveRms(samples, sr) {
+        const wLen = Math.max(1, Math.round((TRIM_WIN_MS / 1000) * sr));
+        function winRms(i) {
+          const e = Math.min(i + wLen, samples.length);
+          let s = 0;
+          for (let j = i; j < e; j++) s += samples[j] * samples[j];
+          return Math.sqrt(s / Math.max(e - i, 1));
+        }
+        let start = samples.length;
+        for (let i = 0; i + wLen <= samples.length; i += wLen)
+          if (winRms(i) > TRIM_THRESH) {
+            start = i;
+            break;
+          }
+        let end = 0;
+        for (let i = samples.length - wLen; i >= 0; i -= wLen)
+          if (winRms(i) > TRIM_THRESH) {
+            end = Math.min(samples.length, i + wLen);
+            break;
+          }
+        if (start >= end) return rms(samples);
+        return rms(samples.slice(start, end));
+      }
+      function normalizeClip(samples, refRms) {
+        const r = refRms !== undefined ? refRms : rms(samples);
+        if (r < 1e-6) return samples.slice();
+        const g = Math.min(TARGET_RMS / r, MAX_NORMALIZE_GAIN);
+        return Array.from(samples, (v) => v * g);
+      }
+      function preEmphasize(samples) {
+        const out = new Float64Array(samples.length);
+        out[0] = samples[0];
+        for (let i = 1; i < samples.length; i++)
+          out[i] = samples[i] - PRE_EMPHASIS_A * samples[i - 1];
+        return out;
+      }
+      function frameRms(samples, sr, frameMs, hopMs) {
+        const fLen = Math.max(1, Math.round((frameMs / 1000) * sr));
+        const hLen = Math.max(1, Math.round((hopMs / 1000) * sr));
+        const out = [];
+        for (let s = 0; s < samples.length; s += hLen) {
+          const e = Math.min(s + fLen, samples.length);
+          let sum = 0;
+          for (let i = s; i < e; i++) sum += samples[i] * samples[i];
+          out.push(Math.sqrt(sum / Math.max(e - s, 1)));
+          if (e === samples.length) break;
+        }
+        return out;
+      }
+      function trimAndCenter(samples, sr) {
+        const wLen = Math.max(1, Math.round((TRIM_WIN_MS / 1000) * sr));
+        const hang = Math.round((TRIM_HANG_MS / 1000) * sr);
+        function winRms(i) {
+          const e = Math.min(i + wLen, samples.length);
+          let s = 0;
+          for (let j = i; j < e; j++) s += samples[j] * samples[j];
+          return Math.sqrt(s / Math.max(e - i, 1));
+        }
+        let start = samples.length;
+        for (let i = 0; i + wLen <= samples.length; i += wLen)
+          if (winRms(i) > TRIM_THRESH) {
+            start = Math.max(0, i - wLen);
+            break;
+          }
+        let end = 0;
+        for (let i = samples.length - wLen; i >= 0; i -= wLen)
+          if (winRms(i) > TRIM_THRESH) {
+            end = Math.min(samples.length, i + wLen + hang);
+            break;
+          }
+        if (start >= end) return samples.slice();
+        const content = samples.slice(start, end);
+        if (content.length >= samples.length) return samples.slice();
+        const padTotal = samples.length - content.length;
+        const padL = Math.floor(padTotal / 2);
+        return [
+          ...new Array(padL).fill(0),
+          ...content,
+          ...new Array(padTotal - padL).fill(0),
+        ];
+      }
+
+      function splitAudioToBands(rawSamples, sr, doTrim) {
+        let p = rawSamples.slice();
+        const refRms = doTrim ? computeActiveRms(p, sr) : undefined;
+        if (doTrim) p = trimAndCenter(p, sr);
+        p = normalizeClip(p, refRms);
+        p = Array.from(preEmphasize(p));
+        const cuts = BAND_CUTOFFS,
+          n = cuts.length;
+        const raw = [];
+        raw.push(applyBiquad(p, lowPassCoeffs(cuts[0], sr)));
+        for (let i = 0; i < n - 1; i++) {
+          const hp = applyBiquad(p, highPassCoeffs(cuts[i], sr));
+          raw.push(applyBiquad(hp, lowPassCoeffs(cuts[i + 1], sr)));
+        }
+        raw.push(applyBiquad(p, highPassCoeffs(cuts[n - 1], sr)));
+        return raw.map((b) => frameRms(b, sr, BAND_FRAME_MS, BAND_HOP_MS));
+      }
+
+      function _sf(data) {
+        // spectral rolloff + flatness
+        if (data.length <= 1) return [0, 0];
+        const pwr = data.map((v) => v * v),
+          eps = 1e-12;
+        const tot = pwr.reduce((a, b) => a + b, 0);
+        if (tot <= eps) return [0, 0];
+        let cum = 0,
+          roll = 1;
+        for (let i = 0; i < pwr.length; i++) {
+          cum += pwr[i];
+          if (cum >= 0.85 * tot) {
+            roll = i / (pwr.length - 1);
+            break;
+          }
+        }
+        const aM = tot / pwr.length;
+        const flat = Math.min(
+          1,
+          Math.exp(
+            pwr.reduce((a, b) => a + Math.log(b + eps), 0) / pwr.length
+          ) / aM
+        );
+        return [roll, flat];
+      }
+      function _pearson(a, b) {
+        const n = Math.min(a.length, b.length);
+        if (!n) return 0;
+        let sA = 0,
+          sB = 0;
+        for (let i = 0; i < n; i++) {
+          sA += a[i];
+          sB += b[i];
+        }
+        const mA = sA / n,
+          mB = sB / n;
+        let cov = 0,
+          vA = 0,
+          vB = 0;
+        for (let i = 0; i < n; i++) {
+          const da = a[i] - mA,
+            db = b[i] - mB;
+          cov += da * db;
+          vA += da * da;
+          vB += db * db;
+        }
+        const d = Math.sqrt(vA) * Math.sqrt(vB);
+        return d < 1e-12 ? 0 : cov / d;
+      }
+      function _env(ax) {
+        if (!ax.length) return { a: 0, d: 0, c: 0 };
+        let pi = 0,
+          pv = ax[0];
+        for (let i = 1; i < ax.length; i++)
+          if (ax[i] > pv) {
+            pv = ax[i];
+            pi = i;
+          }
+        const attack = pi / Math.max(ax.length - 1, 1);
+        let decay = 0;
+        if (pi < ax.length - 1 && pv > 1e-12) {
+          let sd = 0;
+          for (let i = pi + 1; i < ax.length; i++) sd += (pv - ax[i]) / pv;
+          decay = sd / Math.max(ax.length - pi - 1, 1);
+        }
+        let ws = 0,
+          wt = 0;
+        for (let i = 0; i < ax.length; i++) {
+          ws += i * ax[i];
+          wt += ax[i];
+        }
+        const cent = wt > 1e-12 ? ws / wt / Math.max(ax.length - 1, 1) : 0.5;
+        return { a: attack, d: decay, c: cent };
+      }
+      function _mean(d) {
+        return d.reduce((a, b) => a + b, 0) / d.length;
+      }
+      function _std(d) {
+        const m = _mean(d);
+        return Math.sqrt(d.reduce((a, b) => a + (b - m) ** 2, 0) / d.length);
+      }
+      function _peaks(data) {
+        const lag = 5,
+          thr = 3.5,
+          inf = 0.5;
+        if (data.length < lag + 2) return 0;
+        let cnt = 0;
+        const fy = data.slice();
+        const aF = [],
+          sF = [];
+        aF[lag - 1] = _mean(data.slice(0, lag));
+        sF[lag - 1] = aF[lag - 1];
+        for (let i = lag; i < data.length; i++) {
+          if (
+            Math.abs(data[i] - aF[i - 1]) > 0.1 &&
+            Math.abs(data[i] - aF[i - 1]) > thr * sF[i - 1]
+          ) {
+            if (
+              data[i] > aF[i - 1] &&
+              i - 1 > 0 &&
+              (i < 2 || fy[i - 1] === data[i - 1])
+            )
+              cnt++;
+            fy[i] = inf * data[i] + (1 - inf) * fy[i - 1];
+          } else {
+            fy[i] = data[i];
+          }
+          const l = fy.slice(i - lag, i);
+          aF[i] = _mean(l);
+          sF[i] = _std(l);
+        }
+        return cnt;
+      }
+      function extractNBandFeatures(bands) {
+        const feats = [],
+          nb = bands.length;
+        for (const b of bands) {
+          feats.push(Math.max(...b));
+          feats.push(_mean(b));
+          feats.push(_std(b));
+          feats.push(_peaks(b));
+          feats.push(
+            (b.reduce((a, v) => a + Math.abs(v), 0) / b.length) * SAMPLE_RATE
+          );
+          feats.push(..._sf(b));
+          const e = _env(b);
+          feats.push(e.a, e.d, e.c);
+        }
+        for (let i = 0; i < nb; i++)
+          for (let j = i + 1; j < nb; j++)
+            feats.push(_pearson(bands[i], bands[j]));
+        const br = bands.map((b) => rms(b)),
+          tr = br.reduce((a, b) => a + b, 0) + 1e-12;
+        for (const r of br) feats.push(r / tr);
+        return feats;
+      }
+
+      function _fft(re, im) {
+        const n = re.length;
+        for (let i = 1, j = 0; i < n; i++) {
+          let bit = n >> 1;
+          while (j & bit) {
+            j ^= bit;
+            bit >>= 1;
+          }
+          j ^= bit;
+          if (i < j) {
+            [re[i], re[j]] = [re[j], re[i]];
+            [im[i], im[j]] = [im[j], im[i]];
+          }
+        }
+        for (let len = 2; len <= n; len <<= 1) {
+          const h = len >> 1,
+            ang = (-2 * Math.PI) / len,
+            wR = Math.cos(ang),
+            wI = Math.sin(ang);
+          for (let i = 0; i < n; i += len) {
+            let cR = 1,
+              cI = 0;
+            for (let j = 0; j < h; j++) {
+              const a = i + j,
+                b = a + h;
+              const tR = cR * re[b] - cI * im[b],
+                tI = cR * im[b] + cI * re[b];
+              re[b] = re[a] - tR;
+              im[b] = im[a] - tI;
+              re[a] += tR;
+              im[a] += tI;
+              const nr = cR * wR - cI * wI;
+              cI = cR * wI + cI * wR;
+              cR = nr;
+            }
+          }
+        }
+      }
+      function _pwrSpec(frame, sz) {
+        const re = new Float64Array(sz),
+          im = new Float64Array(sz);
+        re.set(frame.subarray(0, Math.min(frame.length, sz)));
+        _fft(re, im);
+        const nb = (sz >> 1) + 1,
+          pw = new Float64Array(nb);
+        for (let i = 0; i < nb; i++) pw[i] = re[i] * re[i] + im[i] * im[i];
+        return pw;
+      }
+      function _melBank(nF, fftSz, sr, lHz, hHz) {
+        const nb = (fftSz >> 1) + 1;
+        const lM = 2595 * Math.log10(1 + lHz / 700),
+          hM = 2595 * Math.log10(1 + hHz / 700);
+        const pts = Array.from(
+          { length: nF + 2 },
+          (_, i) => lM + ((hM - lM) * i) / (nF + 1)
+        );
+        const bins = pts.map((m) =>
+          Math.floor(((fftSz + 1) * 700 * (10 ** (m / 2595) - 1)) / sr)
+        );
+        return Array.from({ length: nF }, (_, i) => {
+          const f = new Float64Array(nb),
+            l = bins[i],
+            c = bins[i + 1],
+            r = bins[i + 2];
+          for (let j = l; j < c && j < nb; j++)
+            f[j] = (j - l) / Math.max(c - l, 1);
+          for (let j = c; j <= r && j < nb; j++)
+            f[j] = (r - j) / Math.max(r - c, 1);
+          return f;
+        });
+      }
+      function _dct(inp, nOut) {
+        const n = inp.length,
+          out = new Float64Array(nOut);
+        for (let k = 0; k < nOut; k++) {
+          let s = 0;
+          for (let i = 0; i < n; i++)
+            s += inp[i] * Math.cos((Math.PI * k * (i + 0.5)) / n);
+          out[k] = s;
+        }
+        return out;
+      }
+      function extractMfccSummary(samples, sr) {
+        const em = new Float64Array(samples.length);
+        em[0] = samples[0];
+        for (let i = 1; i < samples.length; i++)
+          em[i] = samples[i] - PRE_EMPHASIS_A * samples[i - 1];
+        const fLen = Math.round((MFCC_FRAME_MS / 1000) * sr);
+        const hLen = Math.round((MFCC_HOP_MS / 1000) * sr);
+        const win = new Float64Array(fLen);
+        for (let i = 0; i < fLen; i++)
+          win[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (fLen - 1)));
+        const bank = _melBank(MFCC_FILTERS, MFCC_FFT, sr, MFCC_LOW_HZ, sr / 2);
+        const lift = new Float64Array(MFCC_COEFFS);
+        for (let i = 0; i < MFCC_COEFFS; i++)
+          lift[i] =
+            MFCC_LIFTER > 0
+              ? 1 + (MFCC_LIFTER / 2) * Math.sin((Math.PI * i) / MFCC_LIFTER)
+              : 1;
+        const frames = [];
+        for (let s = 0; s + fLen <= em.length; s += hLen) {
+          const wnd = new Float64Array(fLen);
+          for (let i = 0; i < fLen; i++) wnd[i] = em[s + i] * win[i];
+          const pw = _pwrSpec(wnd, MFCC_FFT);
+          const mel = new Float64Array(MFCC_FILTERS);
+          for (let f = 0; f < MFCC_FILTERS; f++) {
+            let s2 = 0;
+            for (let j = 0; j < pw.length; j++) s2 += pw[j] * bank[f][j];
+            mel[f] = Math.log(Math.max(s2, 1e-22));
+          }
+          const m = _dct(mel, MFCC_COEFFS);
+          for (let i = 0; i < MFCC_COEFFS; i++) m[i] *= lift[i];
+          frames.push(m);
+        }
+        if (!frames.length) {
+          const z = new Array(MFCC_COEFFS).fill(0);
+          return [...z, ...z, ...z, ...z];
+        }
+        const nF = frames.length;
+        const nSeg = 2;
+        const segLen = Math.ceil(nF / nSeg);
+        const out = [];
+        for (let s = 0; s < nSeg; s++) {
+          const start = s * segLen,
+            end = Math.min(start + segLen, nF);
+          const cnt = end - start;
+          const means = new Float64Array(MFCC_COEFFS),
+            stds = new Float64Array(MFCC_COEFFS);
+          for (let c = 0; c < MFCC_COEFFS; c++) {
+            let sm = 0;
+            for (let f = start; f < end; f++) sm += frames[f][c];
+            means[c] = sm / cnt;
+          }
+          for (let c = 0; c < MFCC_COEFFS; c++) {
+            let sv = 0;
+            for (let f = start; f < end; f++) {
+              const d = frames[f][c] - means[c];
+              sv += d * d;
+            }
+            stds[c] = Math.sqrt(sv / cnt);
+          }
+          out.push(...Array.from(means), ...Array.from(stds));
+        }
+        return out;
+      }
+
+      function extractFeatures(rawSamples) {
+        const bands = splitAudioToBands(rawSamples, SAMPLE_RATE, true);
+        const bandF = extractNBandFeatures(bands);
+        const mfccRefRms = computeActiveRms(rawSamples, SAMPLE_RATE);
+        let proc = trimAndCenter(rawSamples.slice(), SAMPLE_RATE);
+        proc = normalizeClip(proc, mfccRefRms);
+        const mfccF = extractMfccSummary(proc, SAMPLE_RATE);
+        return [...bandF, ...mfccF]; // 65 + 40 = 105
+      }
+
+      function fitZNorm(features) {
+        if (!features.length) return { means: [], stds: [] };
+        const d = features[0].length,
+          n = features.length;
+        const means = new Array(d).fill(0),
+          stds = new Array(d).fill(0);
+        for (let j = 0; j < d; j++) {
+          let s = 0;
+          for (let i = 0; i < n; i++) s += features[i][j];
+          means[j] = s / n;
+        }
+        for (let j = 0; j < d; j++) {
+          let s = 0;
+          for (let i = 0; i < n; i++) {
+            const v = features[i][j] - means[j];
+            s += v * v;
+          }
+          stds[j] = Math.sqrt(s / n);
+        }
+        return { means, stds };
+      }
+      function applyZNorm(f, z) {
+        return f.map((v, i) =>
+          z.stds[i] > 1e-12 ? (v - z.means[i]) / z.stds[i] : 0
+        );
+      }
+      function fitPca(features, k) {
+        const n = features.length,
+          d = features[0].length;
+        const mean = new Array(d).fill(0);
+        for (const f of features) for (let j = 0; j < d; j++) mean[j] += f[j];
+        for (let j = 0; j < d; j++) mean[j] /= n;
+        const C = features.map((f) => f.map((v, j) => v - mean[j]));
+        const def = C.map((r) => r.slice()),
+          comps = [];
+        for (let c = 0; c < k; c++) {
+          let vec = Array.from({ length: d }, () => Math.random() - 0.5);
+          for (let it = 0; it < 100; it++) {
+            const proj = def.map((r) => {
+              let s = 0;
+              for (let j = 0; j < d; j++) s += r[j] * vec[j];
+              return s;
+            });
+            const nv = new Array(d).fill(0);
+            for (let i = 0; i < n; i++)
+              for (let j = 0; j < d; j++) nv[j] += def[i][j] * proj[i];
+            let nm = 0;
+            for (let j = 0; j < d; j++) nm += nv[j] * nv[j];
+            nm = Math.sqrt(nm) || 1;
+            for (let j = 0; j < d; j++) nv[j] /= nm;
+            let dot = 0;
+            for (let j = 0; j < d; j++) dot += vec[j] * nv[j];
+            vec = nv;
+            if (Math.abs(dot) > 1 - 1e-10) break;
+          }
+          comps.push(vec);
+          for (let i = 0; i < n; i++) {
+            let p = 0;
+            for (let j = 0; j < d; j++) p += def[i][j] * vec[j];
+            for (let j = 0; j < d; j++) def[i][j] -= p * vec[j];
+          }
+        }
+        return { mean, components: comps, nComponents: k };
+      }
+      function applyPca(f, pca) {
+        const c = f.map((v, j) => v - pca.mean[j]);
+        return pca.components.map((comp) => {
+          let s = 0;
+          for (let j = 0; j < comp.length; j++) s += c[j] * comp[j];
+          return s;
+        });
+      }
+      function invertMatrix(A) {
+        const n = A.length;
+        const aug = A.map((r, i) =>
+          r
+            .slice()
+            .concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)))
+        );
+        for (let col = 0; col < n; col++) {
+          let pr = col;
+          for (let r = col + 1; r < n; r++)
+            if (Math.abs(aug[r][col]) > Math.abs(aug[pr][col])) pr = r;
+          if (Math.abs(aug[pr][col]) < 1e-12)
+            return Array.from({ length: n }, (_, i) =>
+              Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))
+            );
+          [aug[col], aug[pr]] = [aug[pr], aug[col]];
+          const sc = aug[col][col];
+          for (let j = 0; j < 2 * n; j++) aug[col][j] /= sc;
+          for (let r = 0; r < n; r++) {
+            if (r === col) continue;
+            const fac = aug[r][col];
+            for (let j = 0; j < 2 * n; j++) aug[r][j] -= fac * aug[col][j];
+          }
+        }
+        return aug.map((r) => r.slice(n));
+      }
+      function fitLda(normFeatures, labels, k, prePcaDim, lambda) {
+        let feats = normFeatures,
+          prePca = null;
+        if (prePcaDim > 0 && prePcaDim < normFeatures[0].length) {
+          prePca = fitPca(normFeatures, prePcaDim);
+          feats = normFeatures.map((f) => applyPca(f, prePca));
+        }
+        const n = feats.length,
+          d = feats[0].length;
+        const cls = [...new Set(labels)].sort((a, b) => a - b),
+          C = cls.length;
+        const kA = Math.min(k, C - 1);
+        if (kA <= 0)
+          return { prePca, mean: new Array(d).fill(0), components: [] };
+        const gm = new Array(d).fill(0);
+        for (const f of feats) for (let i = 0; i < d; i++) gm[i] += f[i];
+        for (let i = 0; i < d; i++) gm[i] /= n;
+        const cM = [],
+          cN = [];
+        for (const c of cls) {
+          const m = new Array(d).fill(0);
+          let cnt = 0;
+          for (let i = 0; i < n; i++)
+            if (labels[i] === c) {
+              for (let j = 0; j < d; j++) m[j] += feats[i][j];
+              cnt++;
+            }
+          for (let j = 0; j < d; j++) m[j] /= cnt;
+          cM.push(m);
+          cN.push(cnt);
+        }
+        const Sw = Array.from({ length: d }, () => new Array(d).fill(0));
+        for (let i = 0; i < n; i++) {
+          const ci = cls.indexOf(labels[i]);
+          for (let r = 0; r < d; r++) {
+            const dr = feats[i][r] - cM[ci][r];
+            for (let c = 0; c < d; c++)
+              Sw[r][c] += dr * (feats[i][c] - cM[ci][c]);
+          }
+        }
+        if (lambda > 0) {
+          let tr = 0;
+          for (let i = 0; i < d; i++) tr += Sw[i][i];
+          const reg = (lambda * tr) / d;
+          for (let i = 0; i < d; i++) {
+            for (let j = 0; j < d; j++) Sw[i][j] *= 1 - lambda;
+            Sw[i][i] += reg;
+          }
+        }
+        const SwI = invertMatrix(Sw);
+        const comps = [];
+        for (let comp = 0; comp < kA; comp++) {
+          let vec = Array.from({ length: d }, () => Math.random() - 0.5);
+          for (let it = 0; it < 150; it++) {
+            const Sbv = new Array(d).fill(0);
+            for (let ci = 0; ci < C; ci++) {
+              let dot = 0;
+              for (let j = 0; j < d; j++) dot += (cM[ci][j] - gm[j]) * vec[j];
+              for (let j = 0; j < d; j++)
+                Sbv[j] += cN[ci] * dot * (cM[ci][j] - gm[j]);
+            }
+            const nv = new Array(d).fill(0);
+            for (let r = 0; r < d; r++)
+              for (let c = 0; c < d; c++) nv[r] += SwI[r][c] * Sbv[c];
+            for (const prev of comps) {
+              let dt = 0;
+              for (let j = 0; j < d; j++) dt += nv[j] * prev[j];
+              for (let j = 0; j < d; j++) nv[j] -= dt * prev[j];
+            }
+            let nm = 0;
+            for (let j = 0; j < d; j++) nm += nv[j] * nv[j];
+            nm = Math.sqrt(nm) || 1;
+            let dc = 0;
+            for (let j = 0; j < d; j++) dc += (nv[j] / nm) * vec[j];
+            vec = nv.map((v) => v / nm);
+            if (Math.abs(dc) > 1 - 1e-8) break;
+          }
+          comps.push(vec);
+        }
+        return { prePca, mean: gm, components: comps };
+      }
+      function applyLda(f, lda) {
+        const v = lda.prePca ? applyPca(f, lda.prePca) : f;
+        return lda.components.map((comp) => {
+          let s = 0;
+          for (let i = 0; i < comp.length; i++)
+            s += (v[i] - lda.mean[i]) * comp[i];
+          return s;
+        });
+      }
+      function cosineDistance(a, b) {
+        let dot = 0,
+          nA = 0,
+          nB = 0;
+        for (let i = 0; i < a.length; i++) {
+          dot += a[i] * b[i];
+          nA += a[i] * a[i];
+          nB += b[i] * b[i];
+        }
+        const d = Math.sqrt(nA) * Math.sqrt(nB);
+        return d < 1e-12 ? 1 : 1 - dot / d;
+      }
+
+      function renderClasses() {
+        const el = document.getElementById("classes");
+        el.innerHTML = "";
+        classes.forEach((cls, ci) => {
+          const div = document.createElement("div");
+          div.className = "class-box";
+          div.innerHTML = `
+      <h3>${cls.name} (${cls.recordings.length} sample${
+            cls.recordings.length !== 1 ? "s" : ""
+          })</h3>
       <button onclick="record(${ci})">Record</button>
       <button onclick="clearRecs(${ci})">Clear</button>`;
-    el.appendChild(div);
-  });
-  document.getElementById('trainBtn').disabled =
-    classes.length < 2 || !classes.some(c => c.recordings.length > 0);
-}
-function addClass() {
-  const inp = document.getElementById('className');
-  const name = inp.value.trim(); if (!name) return;
-  classes.push({ name, recordings: [] });
-  inp.value = ''; renderClasses();
-}
-function clearRecs(ci) {
-  classes[ci].recordings = []; model = null;
-  document.getElementById('predictBtn').disabled = true;
-  renderClasses();
-}
+          el.appendChild(div);
+        });
+        document.getElementById("trainBtn").disabled =
+          classes.length < 2 || !classes.some((c) => c.recordings.length > 0);
+      }
+      function addClass() {
+        const inp = document.getElementById("className");
+        const name = inp.value.trim();
+        if (!name) return;
+        classes.push({ name, recordings: [] });
+        inp.value = "";
+        renderClasses();
+      }
+      function clearRecs(ci) {
+        classes[ci].recordings = [];
+        model = null;
+        document.getElementById("predictBtn").disabled = true;
+        renderClasses();
+      }
 
-async function getAudioCtx() {
-  if (!audioCtx) audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
-  if (audioCtx.state === 'suspended') await audioCtx.resume();
-  return audioCtx;
-}
-async function record(ci) {
-  const ctx = await getAudioCtx();
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: { sampleRate: SAMPLE_RATE, channelCount: 1, noiseSuppression: false, echoCancellation: false },
-    video: false
-  });
-  const src  = ctx.createMediaStreamSource(stream);
-  const proc = ctx.createScriptProcessor(4096, 1, 1);
-  const buf  = [];
-  const nSamples = Math.round(SAMPLE_RATE * DURATION_MS / 1000);
-  log(`Recording "${classes[ci].name}" (${DURATION_MS}ms)…`);
-  src.connect(proc); proc.connect(ctx.destination);
-  await new Promise(res => {
-    proc.onaudioprocess = e => {
-      for (const v of e.inputBuffer.getChannelData(0)) buf.push(v);
-      if (buf.length >= nSamples) res();
-    };
-  });
-  proc.disconnect(); src.disconnect(); stream.getTracks().forEach(t => t.stop());
-  const samples = buf.slice(0, nSamples);
-  classes[ci].recordings.push(samples);
-  log(`✓ Recorded ${samples.length} samples.`);
-  renderClasses();
-}
+      async function getAudioCtx() {
+        if (!audioCtx) audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+        if (audioCtx.state === "suspended") await audioCtx.resume();
+        return audioCtx;
+      }
+      async function record(ci) {
+        const ctx = await getAudioCtx();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate: SAMPLE_RATE,
+            channelCount: 1,
+            noiseSuppression: false,
+            echoCancellation: false,
+          },
+          video: false,
+        });
+        const src = ctx.createMediaStreamSource(stream);
+        const proc = ctx.createScriptProcessor(4096, 1, 1);
+        const buf = [];
+        const nSamples = Math.round((SAMPLE_RATE * DURATION_MS) / 1000);
+        log(`Recording "${classes[ci].name}" (${DURATION_MS}ms)…`);
+        src.connect(proc);
+        proc.connect(ctx.destination);
+        await new Promise((res) => {
+          proc.onaudioprocess = (e) => {
+            for (const v of e.inputBuffer.getChannelData(0)) buf.push(v);
+            if (buf.length >= nSamples) res();
+          };
+        });
+        proc.disconnect();
+        src.disconnect();
+        stream.getTracks().forEach((t) => t.stop());
+        const samples = buf.slice(0, nSamples);
+        classes[ci].recordings.push(samples);
+        log(`✓ Recorded ${samples.length} samples.`);
+        renderClasses();
+      }
 
-async function train() {
-  log('Extracting features…');
-  document.getElementById('trainBtn').disabled = true;
-  await new Promise(r => setTimeout(r, 10));  // yield to UI
+      async function train() {
+        log("Extracting features…");
+        document.getElementById("trainBtn").disabled = true;
+        await new Promise((r) => setTimeout(r, 10)); // yield to UI
 
-  const allF=[], allL=[], names=[];
-  classes.forEach((cls, ci) => {
-    names.push(cls.name);
-    for (const rec of cls.recordings) { allF.push(extractFeatures(rec)); allL.push(ci); }
-  });
-  log(`${allF.length} samples, ${allF[0].length}-d features — fitting z-norm…`);
-  await new Promise(r => setTimeout(r, 10));
+        const allF = [],
+          allL = [],
+          names = [];
+        classes.forEach((cls, ci) => {
+          names.push(cls.name);
+          for (const rec of cls.recordings) {
+            allF.push(extractFeatures(rec));
+            allL.push(ci);
+          }
+        });
+        log(
+          `${allF.length} samples, ${allF[0].length}-d features — fitting z-norm…`
+        );
+        await new Promise((r) => setTimeout(r, 10));
 
-  const znorm = fitZNorm(allF);
-  const normF = allF.map(f => applyZNorm(f, znorm));
+        const znorm = fitZNorm(allF);
+        const normF = allF.map((f) => applyZNorm(f, znorm));
 
-  log(`Fitting LDA (prePCA=${LDA_PRE_PCA_DIM}, k=${LDA_K}, λ=${LDA_LAMBDA})…`);
-  await new Promise(r => setTimeout(r, 10));
+        log(
+          `Fitting LDA (prePCA=${LDA_PRE_PCA_DIM}, k=${LDA_K}, λ=${LDA_LAMBDA})…`
+        );
+        await new Promise((r) => setTimeout(r, 10));
 
-  const lda   = fitLda(normF, allL, LDA_K, LDA_PRE_PCA_DIM, LDA_LAMBDA);
-  const projF = lda.components.length>0 ? normF.map(f=>applyLda(f,lda)) : normF;
+        const lda = fitLda(normF, allL, LDA_K, LDA_PRE_PCA_DIM, LDA_LAMBDA);
+        const projF =
+          lda.components.length > 0
+            ? normF.map((f) => applyLda(f, lda))
+            : normF;
 
-  const centroids = names.map((_,ci) => {
-    const cf = projF.filter((_,i) => allL[i]===ci);
-    if (!cf.length) return new Array(projF[0].length).fill(0);
-    const m = new Array(cf[0].length).fill(0);
-    for(const f of cf) for(let d=0;d<f.length;d++) m[d]+=f[d];
-    for(let d=0;d<m.length;d++) m[d]/=cf.length;
-    return m;
-  });
+        const centroids = names.map((_, ci) => {
+          const cf = projF.filter((_, i) => allL[i] === ci);
+          if (!cf.length) return new Array(projF[0].length).fill(0);
+          const m = new Array(cf[0].length).fill(0);
+          for (const f of cf) for (let d = 0; d < f.length; d++) m[d] += f[d];
+          for (let d = 0; d < m.length; d++) m[d] /= cf.length;
+          return m;
+        });
 
-  model = { znorm, lda, centroids, classNames: names };
-  log(`✓ Model ready. LDA dims: ${lda.components.length}. Classes: ${names.join(', ')}`);
-  document.getElementById('trainBtn').disabled = false;
-  document.getElementById('predictBtn').disabled = false;
-}
+        model = { znorm, lda, centroids, classNames: names };
+        log(
+          `✓ Model ready. LDA dims: ${
+            lda.components.length
+          }. Classes: ${names.join(", ")}`
+        );
+        document.getElementById("trainBtn").disabled = false;
+        document.getElementById("predictBtn").disabled = false;
+      }
 
-function togglePredict() { predicting ? stopPredict() : startPredict(); }
+      function togglePredict() {
+        predicting ? stopPredict() : startPredict();
+      }
 
-async function startPredict() {
-  if (!model) return;
-  const ctx = await getAudioCtx();
-  predicting = true;
-  document.getElementById('predictBtn').textContent = 'Stop predicting';
+      async function startPredict() {
+        if (!model) return;
+        const ctx = await getAudioCtx();
+        predicting = true;
+        document.getElementById("predictBtn").textContent = "Stop predicting";
 
-  const nSamples = Math.round(SAMPLE_RATE * DURATION_MS / 1000);
-  liveRingBuf  = new Float32Array(nSamples);
-  liveWriteIdx = 0;
+        const nSamples = Math.round((SAMPLE_RATE * DURATION_MS) / 1000);
+        liveRingBuf = new Float32Array(nSamples);
+        liveWriteIdx = 0;
 
-  liveStream = await navigator.mediaDevices.getUserMedia({
-    audio: { sampleRate: SAMPLE_RATE, channelCount: 1, noiseSuppression: false, echoCancellation: false },
-    video: false
-  });
-  liveSource    = ctx.createMediaStreamSource(liveStream);
-  liveProcessor = ctx.createScriptProcessor(4096, 1, 1);
-  liveSource.connect(liveProcessor);
-  liveProcessor.connect(ctx.destination);
-  liveProcessor.onaudioprocess = e => {
-    const buf = e.inputBuffer.getChannelData(0);
-    for (const v of buf) { liveRingBuf[liveWriteIdx % nSamples] = v; liveWriteIdx++; }
-  };
+        liveStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate: SAMPLE_RATE,
+            channelCount: 1,
+            noiseSuppression: false,
+            echoCancellation: false,
+          },
+          video: false,
+        });
+        liveSource = ctx.createMediaStreamSource(liveStream);
+        liveProcessor = ctx.createScriptProcessor(4096, 1, 1);
+        liveSource.connect(liveProcessor);
+        liveProcessor.connect(ctx.destination);
+        liveProcessor.onaudioprocess = (e) => {
+          const buf = e.inputBuffer.getChannelData(0);
+          for (const v of buf) {
+            liveRingBuf[liveWriteIdx % nSamples] = v;
+            liveWriteIdx++;
+          }
+        };
 
-  predictTimer = setInterval(() => {
-    if (!predicting || !model || liveWriteIdx < nSamples) return;
-    const start = liveWriteIdx % nSamples;
-    const samples = new Array(nSamples);
-    for (let i=0; i<nSamples; i++) samples[i] = liveRingBuf[(start+i) % nSamples];
+        predictTimer = setInterval(() => {
+          if (!predicting || !model || liveWriteIdx < nSamples) return;
+          const start = liveWriteIdx % nSamples;
+          const samples = new Array(nSamples);
+          for (let i = 0; i < nSamples; i++)
+            samples[i] = liveRingBuf[(start + i) % nSamples];
 
-    let f = extractFeatures(samples);
-    f = applyZNorm(f, model.znorm);
-    if (model.lda.components.length > 0) f = applyLda(f, model.lda);
+          let f = extractFeatures(samples);
+          f = applyZNorm(f, model.znorm);
+          if (model.lda.components.length > 0) f = applyLda(f, model.lda);
 
-    const dists = model.centroids.map(c => cosineDistance(f, c));
-    const neg   = dists.map(d => -d * 5);
-    const mx    = Math.max(...neg);
-    const exps  = neg.map(v => Math.exp(v-mx));
-    const sum   = exps.reduce((a,b)=>a+b, 0);
-    renderResults(exps.map(v => v/sum));
-  }, 400);
-}
+          const dists = model.centroids.map((c) => cosineDistance(f, c));
+          const neg = dists.map((d) => -d * 5);
+          const mx = Math.max(...neg);
+          const exps = neg.map((v) => Math.exp(v - mx));
+          const sum = exps.reduce((a, b) => a + b, 0);
+          renderResults(exps.map((v) => v / sum));
+        }, 400);
+      }
 
-function stopPredict() {
-  predicting = false;
-  document.getElementById('predictBtn').textContent = 'Start predicting';
-  if (predictTimer) { clearInterval(predictTimer); predictTimer = null; }
-  if (liveProcessor) { liveProcessor.disconnect(); liveProcessor = null; }
-  if (liveSource)    { liveSource.disconnect();    liveSource    = null; }
-  if (liveStream)    { liveStream.getTracks().forEach(t=>t.stop()); liveStream = null; }
-  document.getElementById('results').innerHTML = '';
-}
+      function stopPredict() {
+        predicting = false;
+        document.getElementById("predictBtn").textContent = "Start predicting";
+        if (predictTimer) {
+          clearInterval(predictTimer);
+          predictTimer = null;
+        }
+        if (liveProcessor) {
+          liveProcessor.disconnect();
+          liveProcessor = null;
+        }
+        if (liveSource) {
+          liveSource.disconnect();
+          liveSource = null;
+        }
+        if (liveStream) {
+          liveStream.getTracks().forEach((t) => t.stop());
+          liveStream = null;
+        }
+        document.getElementById("results").innerHTML = "";
+      }
 
-function renderResults(conf) {
-  document.getElementById('results').innerHTML =
-    model.classNames.map((name,i) =>
-      `<div class="bar-label">${name}: ${(conf[i]*100).toFixed(1)}%</div>
-       <div class="bar" style="width:${(conf[i]*100).toFixed(1)}%"></div>`
-    ).join('');
-}
-</script>
-</body>
+      function renderResults(conf) {
+        document.getElementById("results").innerHTML = model.classNames
+          .map(
+            (name, i) =>
+              `<div class="bar-label">${name}: ${(conf[i] * 100).toFixed(
+                1
+              )}%</div>
+       <div class="bar" style="width:${(conf[i] * 100).toFixed(1)}%"></div>`
+          )
+          .join("");
+      }
+    </script>
+  </body>
 </html>

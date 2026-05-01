@@ -55,7 +55,12 @@ export const extractMfccFeatures = (
 ): number[] => {
   const refRms = computeActiveRms(samples, sampleRate);
   const trimmed = trimAndCenter(samples, sampleRate);
-  const normalized = normalizeClip(trimmed, AUDIO_TARGET_RMS, AUDIO_MAX_NORMALIZE_GAIN, refRms);
+  const normalized = normalizeClip(
+    trimmed,
+    AUDIO_TARGET_RMS,
+    AUDIO_MAX_NORMALIZE_GAIN,
+    refRms
+  );
   const result = extractMfcc(normalized, { sampleRate });
   if (MFCC_TEMPORAL_SEGMENTS > 1) return result.summaryTemporal;
   if (MFCC_EXTENDED_STATS) return result.summaryExtended;
