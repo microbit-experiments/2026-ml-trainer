@@ -1,12 +1,21 @@
 import { XYZData } from "./model";
-import { AUDIO_LOW_CUTOFF, AUDIO_HIGH_CUTOFF } from "./audioConfig";
+import {
+  AUDIO_LOW_CUTOFF,
+  AUDIO_HIGH_CUTOFF,
+  AUDIO_BAND_CUTOFFS,
+  AUDIO_TARGET_RMS,
+  AUDIO_MAX_NORMALIZE_GAIN,
+  AUDIO_PRE_EMPHASIS_ALPHA,
+  BAND_FRAME_MS,
+  BAND_HOP_MS,
+  TRIM_THRESHOLD,
+  TRIM_WINDOW_MS,
+  TRIM_HANGOVER_MS,
+  AUGMENT_GAIN_RANGE,
+  AUGMENT_SHIFT_MS,
+} from "./audioConfig";
 import { rms } from "./audio-extra-features";
 
-/**
- * Second-order biquad filter applied to an array of samples.
- * Coefficients follow the form below:
- *   y[n] = (b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2]) / a0
- */
 interface BiquadCoeffs {
   b0: number;
   b1: number;
@@ -35,10 +44,7 @@ const applyBiquad = (samples: number[], c: BiquadCoeffs): number[] => {
   return out;
 };
 
-/**
- * Compute biquad coefficients for a second-order Butterworth low-pass and high-pass filters.
- * formulas from: https://www.musicdsp.org/en/latest/Filters/197-rbj-audio-eq-cookbook.html
- */
+// Butterworth biquad: https://www.musicdsp.org/en/latest/Filters/197-rbj-audio-eq-cookbook.html
 const lowPassCoeffs = (cutoffHz: number, sampleRate: number): BiquadCoeffs => {
   const w0 = (2 * Math.PI * cutoffHz) / sampleRate;
   const alpha = Math.sin(w0) / (2 * Math.SQRT2); // Q = 1/sqrt(2) for Butterworth
@@ -68,7 +74,10 @@ const highPassCoeffs = (cutoffHz: number, sampleRate: number): BiquadCoeffs => {
 };
 
 // Speech pre-emphasis to boost high-frequency consonant content.
-const preEmphasize = (samples: number[], alpha: number = 0.97): number[] => {
+const preEmphasize = (
+  samples: number[],
+  alpha: number = AUDIO_PRE_EMPHASIS_ALPHA
+): number[] => {
   if (samples.length === 0) return samples;
   const out = new Array<number>(samples.length);
   out[0] = samples[0];
@@ -78,7 +87,6 @@ const preEmphasize = (samples: number[], alpha: number = 0.97): number[] => {
   return out;
 };
 
-// Convert a waveform into a short-time RMS envelope
 const frameRms = (
   samples: number[],
   sampleRate: number,
@@ -98,26 +106,55 @@ const frameRms = (
   return out;
 };
 
-// Normalise a clip to a consistent RMS
-// so quiet and loud recordings produce similar features.
+// Measures RMS of the active region only — avoids zero-pad dilution. Falls back to full-clip RMS.
+export const computeActiveRms = (
+  samples: number[],
+  sampleRate: number,
+  threshold: number = TRIM_THRESHOLD,
+  windowMs: number = TRIM_WINDOW_MS
+): number => {
+  if (samples.length === 0) return 0;
+  const winLen = Math.max(1, Math.round((windowMs / 1000) * sampleRate));
+
+  const winRms = (start: number): number => {
+    let sum = 0;
+    const end = Math.min(start + winLen, samples.length);
+    for (let i = start; i < end; i++) sum += samples[i] * samples[i];
+    return Math.sqrt(sum / Math.max(end - start, 1));
+  };
+
+  let start = samples.length;
+  for (let i = 0; i + winLen <= samples.length; i += winLen) {
+    if (winRms(i) > threshold) { start = i; break; }
+  }
+  let end = 0;
+  for (let i = samples.length - winLen; i >= 0; i -= winLen) {
+    if (winRms(i) > threshold) { end = Math.min(samples.length, i + winLen); break; }
+  }
+
+  if (start >= end) return rms(samples);
+  return rms(samples.slice(start, end));
+};
+
 export const normalizeClip = (
   samples: number[],
-  targetRms: number = 0.1
+  targetRms: number = AUDIO_TARGET_RMS,
+  maxGain: number = AUDIO_MAX_NORMALIZE_GAIN,
+  referenceRms?: number
 ): number[] => {
   if (samples.length === 0) return samples;
-  const r = rms(samples);
+  const r = referenceRms ?? rms(samples);
   if (r < 1e-6) return samples;
-  const gain = targetRms / r;
+  const gain = Math.min(targetRms / r, maxGain);
   return samples.map((s) => s * gain);
 };
 
-//  Trim leading/trailing silence from a recorded clip and re-centre the sound
 export const trimAndCenter = (
   samples: number[],
   sampleRate: number,
-  threshold: number = 0.01,
-  windowMs: number = 25,
-  hangoverMs: number = 100
+  threshold: number = TRIM_THRESHOLD,
+  windowMs: number = TRIM_WINDOW_MS,
+  hangoverMs: number = TRIM_HANGOVER_MS
 ): number[] => {
   if (samples.length === 0) return samples;
   const winLen = Math.max(1, Math.round((windowMs / 1000) * sampleRate));
@@ -163,8 +200,8 @@ export const trimAndCenter = (
 export const augmentClip = (
   samples: number[],
   sampleRate: number,
-  gainRange: number = 0.1,
-  shiftMs: number = 20
+  gainRange: number = AUGMENT_GAIN_RANGE,
+  shiftMs: number = AUGMENT_SHIFT_MS
 ): number[] => {
   const gain = 1 + (Math.random() * 2 - 1) * gainRange;
   const out = samples.map((s) => s * gain);
@@ -177,6 +214,33 @@ export const augmentClip = (
       ...out.slice(0, out.length - shift),
     ];
   return [...out.slice(-shift), ...new Array<number>(-shift).fill(0)];
+};
+
+// Deterministic augmentation: gain ±15%, shift ±30ms, white noise at 15–40 dB SNR.
+export const seededAugmentClip = (
+  samples: number[],
+  sampleRate: number,
+  rng: () => number
+): number[] => {
+  const gain = 1 + (rng() * 2 - 1) * 0.15;
+  let out = samples.map((s) => s * gain);
+
+  const maxShift = Math.round(0.03 * sampleRate);
+  const shift = Math.round((rng() * 2 - 1) * maxShift);
+  if (shift > 0)
+    out = [
+      ...new Array<number>(shift).fill(0),
+      ...out.slice(0, out.length - shift),
+    ];
+  else if (shift < 0)
+    out = [...out.slice(-shift), ...new Array<number>(-shift).fill(0)];
+
+  const snrDb = 15 + rng() * 25;
+  const sigPow = out.reduce((s, x) => s + x * x, 0) / (out.length || 1);
+  const noiseAmp = Math.sqrt(sigPow / Math.pow(10, snrDb / 10));
+  if (noiseAmp > 1e-8) out = out.map((x) => x + (rng() * 2 - 1) * noiseAmp);
+
+  return out;
 };
 
 export interface AudioPreprocessOptions {
@@ -194,16 +258,6 @@ export interface AudioPreprocessOptions {
   hopMs?: number;
 }
 
-/**
- * Split a mono audio signal into three frequency bands and return as XYZData:
- *   x = low  band  (0 Hz – lowCutoff)
- *   y = mid  band  (lowCutoff – highCutoff)
- *   z = high band  (highCutoff – Nyquist)
- *
- * Default band edges: 300 Hz and 2000 Hz. Clips are RMS-normalised by default
- * so amplitude differences across speakers do not dominate the features.
- * Pass { trim: true } when processing discrete recorded clips (not live streams).
- */
 export const splitAudioToXYZ = (
   samples: number[],
   sampleRate: number,
@@ -216,16 +270,17 @@ export const splitAudioToXYZ = (
     trim = false,
     preEmphasis = true,
     temporalFraming = true,
-    frameMs = 25,
-    hopMs = 10,
+    frameMs = BAND_FRAME_MS,
+    hopMs = BAND_HOP_MS,
   } = opts;
   let processed = samples;
+  // Compute active RMS before trimming so zero-padding doesn't dilute the gain.
+  const refRms = normalize && trim ? computeActiveRms(samples, sampleRate) : undefined;
   if (trim) processed = trimAndCenter(processed, sampleRate);
-  if (normalize) processed = normalizeClip(processed);
+  if (normalize) processed = normalizeClip(processed, AUDIO_TARGET_RMS, AUDIO_MAX_NORMALIZE_GAIN, refRms);
   if (preEmphasis) processed = preEmphasize(processed);
   const low = applyBiquad(processed, lowPassCoeffs(lowCutoff, sampleRate));
   const high = applyBiquad(processed, highPassCoeffs(highCutoff, sampleRate));
-  // Mid-band via band-pass (high-pass at lowCutoff, then low-pass at highCutoff).
   const mid = applyBiquad(
     applyBiquad(processed, highPassCoeffs(lowCutoff, sampleRate)),
     lowPassCoeffs(highCutoff, sampleRate)
@@ -238,4 +293,43 @@ export const splitAudioToXYZ = (
     y: frameRms(mid, sampleRate, frameMs, hopMs),
     z: frameRms(high, sampleRate, frameMs, hopMs),
   };
+};
+
+export const splitAudioToBands = (
+  samples: number[],
+  sampleRate: number,
+  cutoffs: number[] = AUDIO_BAND_CUTOFFS,
+  opts: AudioPreprocessOptions = {}
+): number[][] => {
+  const {
+    normalize = true,
+    trim = false,
+    preEmphasis = true,
+    temporalFraming = true,
+    frameMs = BAND_FRAME_MS,
+    hopMs = BAND_HOP_MS,
+  } = opts;
+  let processed = samples;
+  // Compute active RMS before trimming so zero-padding doesn't dilute the gain.
+  const refRms = normalize && trim ? computeActiveRms(samples, sampleRate) : undefined;
+  if (trim) processed = trimAndCenter(processed, sampleRate);
+  if (normalize) processed = normalizeClip(processed, AUDIO_TARGET_RMS, AUDIO_MAX_NORMALIZE_GAIN, refRms);
+  if (preEmphasis) processed = preEmphasize(processed);
+
+  const n = cutoffs.length;
+  const bands: number[][] = [];
+
+  bands.push(applyBiquad(processed, lowPassCoeffs(cutoffs[0], sampleRate)));
+
+  for (let i = 0; i < n - 1; i++) {
+    const hp = applyBiquad(processed, highPassCoeffs(cutoffs[i], sampleRate));
+    bands.push(applyBiquad(hp, lowPassCoeffs(cutoffs[i + 1], sampleRate)));
+  }
+
+  bands.push(
+    applyBiquad(processed, highPassCoeffs(cutoffs[n - 1], sampleRate))
+  );
+
+  if (!temporalFraming) return bands;
+  return bands.map((b) => frameRms(b, sampleRate, frameMs, hopMs));
 };
