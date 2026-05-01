@@ -390,7 +390,7 @@ export const fitLda = (
   const classSet = [...new Set(fitLabels)].sort((a, b) => a - b);
   const C = classSet.length;
   const k = Math.min(LDA_COMPONENTS, C - 1);
-  if (k <= 0) return { prePca, mean: new Array(d).fill(0), components: [] };
+  if (k <= 0) return { prePca, mean: new Array<number>(d).fill(0), components: [] };
 
   const globalMean = new Array<number>(d).fill(0);
   for (const f of feats) for (let i = 0; i < d; i++) globalMean[i] += f[i];

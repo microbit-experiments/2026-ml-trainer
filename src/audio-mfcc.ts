@@ -202,9 +202,9 @@ export const extractMfcc = (
   }
 
   if (mfccFrames.length === 0) {
-    const zeros = new Array(numCoeffs).fill(0);
+    const zeros = new Array<number>(numCoeffs).fill(0);
     const nSeg = Math.max(1, temporalSegments);
-    const temporalZeros = new Array(2 * numCoeffs * nSeg).fill(0);
+    const temporalZeros = new Array<number>(2 * numCoeffs * nSeg).fill(0);
     return {
       frames: [],
       summary: [...zeros, ...zeros],
