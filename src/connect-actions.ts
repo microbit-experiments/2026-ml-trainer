@@ -241,7 +241,10 @@ export class ConnectActions {
       this.bluetooth.addEventListener("status", listeners.bluetooth);
       this.statusListeners.bluetooth = listeners.bluetooth;
     } else {
-      this.radioBridge.removeEventListener("status", this.statusListeners.radioBridge);
+      this.radioBridge.removeEventListener(
+        "status",
+        this.statusListeners.radioBridge
+      );
       this.statusListeners.radioBridge = () => {};
       this.usb.addEventListener("status", listeners.usb);
       this.statusListeners.usb = listeners.usb;

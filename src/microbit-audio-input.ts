@@ -59,7 +59,9 @@ export const addMicrobitAudioListener = (
 export const removeMicrobitAudioListener = (
   listener: (event: AudioXYZEvent) => void
 ) => {
-  listeners = listeners.filter((currentListener) => currentListener !== listener);
+  listeners = listeners.filter(
+    (currentListener) => currentListener !== listener
+  );
 };
 
 const emitXYZ = (x: number, y: number, z: number) => {
@@ -68,10 +70,7 @@ const emitXYZ = (x: number, y: number, z: number) => {
   listeners.forEach((listener) => listener(event));
 };
 
-const debugSnapshot = (
-  label: string,
-  details: Record<string, unknown>
-) => {
+const debugSnapshot = (label: string, details: Record<string, unknown>) => {
   debugAudio(label, details);
 };
 
@@ -84,7 +83,9 @@ const previewTextBytes = (value: string, maxLength: number = 24) => {
     character.charCodeAt(0)
   );
   const ascii = bytes
-    .map((byte) => (byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : "."))
+    .map((byte) =>
+      byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : "."
+    )
     .join("");
   const hex = bytes.map((byte) => byte.toString(16).padStart(2, "0")).join(" ");
   return { ascii, hex, length: value.length };
@@ -93,7 +94,9 @@ const previewTextBytes = (value: string, maxLength: number = 24) => {
 const previewBinaryBytes = (value: Uint8Array, maxLength: number = 24) => {
   const bytes = Array.from(value.slice(0, maxLength));
   const ascii = bytes
-    .map((byte) => (byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : "."))
+    .map((byte) =>
+      byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : "."
+    )
     .join("");
   const hex = bytes.map((byte) => byte.toString(16).padStart(2, "0")).join(" ");
   return { ascii, hex, length: value.length };

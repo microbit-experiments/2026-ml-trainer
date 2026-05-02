@@ -66,10 +66,8 @@ export class ConnectionStageActions {
   ) => {
     this.setFlowStep(ConnectionFlowStep.WebUsbChooseMicrobit);
 
-    const {
-      result: usbResult,
-      deviceId,
-    } = await this.actions.requestUSBConnection();
+    const { result: usbResult, deviceId } =
+      await this.actions.requestUSBConnection();
     if (usbResult !== ConnectResult.Success) {
       return this.handleConnectAndFlashFail(usbResult);
     }
