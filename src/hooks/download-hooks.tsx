@@ -123,7 +123,6 @@ export class DownloadProjectActions {
     });
   };
 
-
   getOnNext = () => {
     const nextStep = this.getNextStep();
     return nextStep ? () => this.setStep(nextStep) : undefined;
