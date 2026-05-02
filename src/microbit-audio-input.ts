@@ -6,15 +6,15 @@ import {
 import { XYZStream } from "./audio-input";
 
 interface SerialPortLike {
-  readable: ReadableStream<Uint8Array<ArrayBufferLike>> | null;
+  readable: ReadableStream<Uint8Array> | null;
   open(options: { baudRate: number }): Promise<void>;
 }
 
-interface NavigatorWithSerial extends Navigator {
+type NavigatorWithSerial = {
   serial?: {
     requestPort(): Promise<SerialPortLike>;
   };
-}
+};
 
 const SAMPLE_RATE_FALLBACK = 8000;
 const DURATION_MS = 990;

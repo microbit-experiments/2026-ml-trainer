@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 import { useMemo } from "react";
-import {
-  ConnectActions,
-  ConnectionAndFlashOptions,
-} from "../connect-actions";
+import { ConnectActions } from "../connect-actions";
 import { useConnectActions } from "../connect-actions-hooks";
 import { ConnectionStatus } from "../connect-status-hooks";
 import { ConnectionStageActions } from "../connection-stage-actions";
@@ -23,7 +20,6 @@ import { useSettings, useStore } from "../store";
 import { downloadHex } from "../utils/fs-util";
 
 export class DownloadProjectActions {
-  private flashingProgressCallback: (value: number) => void;
   constructor(
     private state: DownloadState,
     private setState: (stage: DownloadState) => void,
@@ -35,12 +31,9 @@ export class DownloadProjectActions {
     private connectionStatus: ConnectionStatus,
     flashingProgressCallback: (value: number) => void
   ) {
-    this.flashingProgressCallback = (value: number) => {
-      if (state.step !== DownloadStep.FlashingInProgress) {
-        setState({ ...state, step: DownloadStep.FlashingInProgress });
-      }
-      flashingProgressCallback(value);
-    };
+    // Accept the callback for API compatibility. Mark it used to avoid the
+    // TypeScript 'declared but its value is never read' error.
+    void flashingProgressCallback;
   }
 
   clearMakeCodeUsbDevice = () => {
@@ -130,21 +123,6 @@ export class DownloadProjectActions {
     });
   };
 
-  private flashMicrobit = (
-    stage: DownloadState,
-    connectionAndFlashOptions?: ConnectionAndFlashOptions
-  ) => {
-    if (!stage.hex) {
-      throw new Error("Project hex/name is not set!");
-    }
-    void connectionAndFlashOptions;
-    downloadHex(stage.hex);
-    this.updateStage({
-      step: DownloadStep.None,
-      flashProgress: 0,
-      usbDevice: undefined,
-    });
-  };
 
   getOnNext = () => {
     const nextStep = this.getNextStep();
