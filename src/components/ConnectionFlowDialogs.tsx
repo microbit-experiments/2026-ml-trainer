@@ -3,8 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  */
-import { useCallback, useState } from "react";
-import { bluetoothUniversalHex } from "../connection-stage-actions";
+import { useCallback, useEffect, useState } from "react";
 import {
   ConnectionFlowStep,
   ConnectionFlowType,
@@ -18,12 +17,8 @@ import ConnectCableDialog, {
   getConnectionCableDialogConfig,
 } from "./ConnectCableDialog";
 import ConnectErrorDialog from "./ConnectErrorDialog";
-import DownloadProgressDialog, {
-  getHeadingId as getDownloadProgressHeadingId,
-} from "./DownloadProgressDialog";
 import EnterBluetoothPatternDialog from "./EnterBluetoothPatternDialog";
 import LoadingDialog from "./LoadingDialog";
-import ManualFlashingDialog from "./ManualFlashingDialog";
 import SelectMicrobitBluetoothDialog from "./SelectMicrobitBluetoothDialog";
 import SelectMicrobitUsbDialog, {
   getHeadingId as getSelectMicrobitUsbHeadingId,
@@ -37,7 +32,6 @@ import ChooseDeviceOverlay from "./ChooseDeviceOverlay";
 const ConnectionDialogs = () => {
   const { stage, actions } = useConnectionStage();
   const logging = useLogging();
-  const [flashProgress, setFlashProgress] = useState<number>(0);
   const [microbitName, setMicrobitName] = useState<string | undefined>(
     stage.bluetoothMicrobitName
   );
@@ -46,16 +40,15 @@ const ConnectionDialogs = () => {
   }, [actions]);
 
   const isOpen = stage.flowStep !== ConnectionFlowStep.None;
+  const skipBatteryStep =
+    stage.flowStep === ConnectionFlowStep.ConnectBattery &&
+    stage.flowType === ConnectionFlowType.ConnectRadioRemote;
 
-  const progressCallback = useCallback(
-    (progress: number) => {
-      if (stage.flowStep !== ConnectionFlowStep.FlashingInProgress) {
-        actions.setFlowStep(ConnectionFlowStep.FlashingInProgress);
-      }
-      setFlashProgress(progress * 100);
-    },
-    [actions, stage.flowStep]
-  );
+  useEffect(() => {
+    if (skipBatteryStep) {
+      actions.setFlowStep(ConnectionFlowStep.None);
+    }
+  }, [actions, skipBatteryStep]);
 
   const dialogCommonProps = { isOpen, onClose };
 
@@ -112,7 +105,7 @@ const ConnectionDialogs = () => {
             message: "radio-bridge",
           });
         }
-        await actions.connectAndflashMicrobit(progressCallback, onFlashSuccess);
+        await actions.connectAndflashMicrobit(() => {}, onFlashSuccess);
       };
       return (
         <SelectMicrobitUsbDialog
@@ -123,18 +116,10 @@ const ConnectionDialogs = () => {
         />
       );
     }
-    // Only bluetooth mode has this fallback, the radio bridge mode requires working WebUSB.
-    case ConnectionFlowStep.ManualFlashingTutorial: {
-      return (
-        <ManualFlashingDialog
-          {...dialogCommonProps}
-          hex={bluetoothUniversalHex}
-          onNextClick={actions.onNextClick}
-          onBackClick={actions.onBackClick}
-        />
-      );
-    }
     case ConnectionFlowStep.ConnectBattery: {
+      if (stage.flowType === ConnectionFlowType.ConnectRadioRemote) {
+        return null;
+      }
       return (
         <ConnectBatteryDialog
           {...dialogCommonProps}
@@ -176,15 +161,6 @@ const ConnectionDialogs = () => {
     case ConnectionFlowStep.WebUsbChooseMicrobit: {
       // Browser dialog is shown, no custom dialog shown at the same time
       return <ChooseDeviceOverlay />;
-    }
-    case ConnectionFlowStep.FlashingInProgress: {
-      return (
-        <DownloadProgressDialog
-          headingId={getDownloadProgressHeadingId(stage.flowType)}
-          isOpen={isOpen}
-          progress={flashProgress}
-        />
-      );
     }
     case ConnectionFlowStep.ConnectingBluetooth: {
       return (

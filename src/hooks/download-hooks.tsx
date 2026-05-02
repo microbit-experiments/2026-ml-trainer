@@ -3,16 +3,8 @@
  *
  * SPDX-License-Identifier: MIT
  */
-import {
-  createWebUSBConnection,
-  ConnectionStatus as UsbConnectionStatus,
-} from "@microbit/microbit-connection";
 import { useMemo } from "react";
-import {
-  ConnectActions,
-  ConnectResult,
-  ConnectionAndFlashOptions,
-} from "../connect-actions";
+import { ConnectActions } from "../connect-actions";
 import { useConnectActions } from "../connect-actions-hooks";
 import { ConnectionStatus } from "../connect-status-hooks";
 import { ConnectionStageActions } from "../connection-stage-actions";
@@ -28,7 +20,6 @@ import { useSettings, useStore } from "../store";
 import { downloadHex } from "../utils/fs-util";
 
 export class DownloadProjectActions {
-  private flashingProgressCallback: (value: number) => void;
   constructor(
     private state: DownloadState,
     private setState: (stage: DownloadState) => void,
@@ -40,42 +31,24 @@ export class DownloadProjectActions {
     private connectionStatus: ConnectionStatus,
     flashingProgressCallback: (value: number) => void
   ) {
-    this.flashingProgressCallback = (value: number) => {
-      if (state.step !== DownloadStep.FlashingInProgress) {
-        setState({ ...state, step: DownloadStep.FlashingInProgress });
-      }
-      flashingProgressCallback(value);
-    };
+    // Accept the callback for API compatibility. Mark it used to avoid the
+    // TypeScript 'declared but its value is never read' error.
+    void flashingProgressCallback;
   }
 
   clearMakeCodeUsbDevice = () => {
     this.setState({ ...this.state, usbDevice: undefined });
   };
 
-  start = async (download: HexData) => {
-    if (
-      this.state.usbDevice &&
-      this.state.usbDevice.status === UsbConnectionStatus.CONNECTED
-    ) {
-      const newState: DownloadState = {
-        ...this.state,
-        step: DownloadStep.FlashingInProgress,
-        hex: download,
-      };
-      this.setState(newState);
-      await this.flashMicrobit(newState, {
-        temporaryUsbConnection: this.state.usbDevice,
-      });
-    } else if (!this.settings.showPreDownloadHelp) {
-      const newState = { ...this.state, hex: download };
-      await this.onHelpNext(true, newState);
-    } else {
-      this.updateStage({
-        step: DownloadStep.Help,
-        microbitToFlash: MicrobitToFlash.Default,
-        hex: download,
-      });
-    }
+  start = (download: HexData) => {
+    downloadHex(download);
+    this.setState({
+      ...this.state,
+      step: DownloadStep.None,
+      hex: download,
+      microbitToFlash: MicrobitToFlash.Default,
+      usbDevice: undefined,
+    });
   };
 
   onHelpNext = async (isSkipNextTime: boolean, state?: DownloadState) => {
@@ -110,7 +83,7 @@ export class DownloadProjectActions {
 
   onBackToIntro = () => this.setStep(DownloadStep.Help);
 
-  onChosenSameMicrobit = async () => {
+  onChosenSameMicrobit = () => {
     if (this.connectActions.isUsbDeviceConnected()) {
       const newStage = { ...this.state, microbitToFlash: MicrobitToFlash.Same };
       const usbConnection = this.connectActions.getUsbConnection();
@@ -138,76 +111,16 @@ export class DownloadProjectActions {
     });
   };
 
-  connectAndFlashMicrobit = async (stage: DownloadState) => {
-    let connectionAndFlashOptions: ConnectionAndFlashOptions | undefined;
-    if (
-      stage.microbitToFlash === MicrobitToFlash.Same &&
-      this.connectionStage.connType === "bluetooth"
-    ) {
-      // Disconnect input micro:bit to not trigger bluetooth connection lost warning.
-      await this.connectionStageActions.disconnectInputMicrobit();
-    }
-    if (stage.microbitToFlash === MicrobitToFlash.Different) {
-      // Use a temporary USB connection to flash the MakeCode program.
-      // Disconnect the input micro:bit if the user selects this device from the
-      // list by mistake.
-      const temporaryUsbConnection = createWebUSBConnection();
-      const connectedDevice = this.connectActions.getUsbDevice();
-      if (connectedDevice) {
-        temporaryUsbConnection.setRequestDeviceExclusionFilters([
-          { serialNumber: connectedDevice.serialNumber },
-        ]);
-      }
-      connectionAndFlashOptions = {
-        temporaryUsbConnection,
-        callbackIfDeviceIsSame:
-          this.connectionStageActions.disconnectInputMicrobit,
-      };
-    }
+  connectAndFlashMicrobit = (stage: DownloadState) => {
     if (!stage.hex) {
       throw new Error("Project hex/name is not set!");
     }
-
-    this.updateStage({ step: DownloadStep.WebUsbChooseMicrobit });
-
-    const { result, usb } = await this.connectActions.requestUSBConnection(
-      connectionAndFlashOptions
-    );
-    if (result === ConnectResult.Success && usb.getBoardVersion() === "V1") {
-      return this.updateStage({
-        step: DownloadStep.IncompatibleDevice,
-      });
-    }
-
-    await this.flashMicrobit(stage, connectionAndFlashOptions);
-  };
-
-  private flashMicrobit = async (
-    stage: DownloadState,
-    connectionAndFlashOptions?: ConnectionAndFlashOptions
-  ) => {
-    if (!stage.hex) {
-      throw new Error("Project hex/name is not set!");
-    }
-    const result = await this.connectActions.flashMicrobit(
-      stage.hex.hex,
-      this.flashingProgressCallback,
-      connectionAndFlashOptions?.temporaryUsbConnection
-    );
-    const newStage = {
-      usbDevice:
-        connectionAndFlashOptions?.temporaryUsbConnection ??
-        this.connectActions.getUsbConnection(),
-      step:
-        result === ConnectResult.Success
-          ? DownloadStep.None
-          : DownloadStep.ManualFlashingTutorial,
+    downloadHex(stage.hex);
+    this.updateStage({
+      step: DownloadStep.None,
       flashProgress: 0,
-    };
-    this.updateStage(newStage);
-    if (newStage.step === DownloadStep.ManualFlashingTutorial) {
-      downloadHex(stage.hex);
-    }
+      usbDevice: undefined,
+    });
   };
 
   getOnNext = () => {

@@ -1381,15 +1381,18 @@ const createMlStore = (logging: Logging) => {
           merge(persistedStateUnknown, currentState) {
             // The zustand default merge does no validation either.
             const persistedState = persistedStateUnknown as State;
+            const mergedSettings = {
+              // Make sure we have any new settings defaulted.
+              ...defaultSettings,
+              ...currentState.settings,
+              ...persistedState.settings,
+              // Force micro:bit microphone mode for all sessions.
+              microphoneUsed: "microbit" as const,
+            };
             return {
               ...currentState,
               ...persistedState,
-              settings: {
-                // Make sure we have any new settings defaulted
-                ...defaultSettings,
-                ...currentState.settings,
-                ...persistedState.settings,
-              },
+              settings: mergedSettings,
             };
           },
         }

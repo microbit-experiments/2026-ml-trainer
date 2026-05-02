@@ -140,6 +140,8 @@ export interface DownloadState {
   // The micro:bit used to flash the hex.  We remember your choice for easy code
   // iteration for as long as the editor is open.
   usbDevice?: MicrobitWebUSBConnection;
+  // Optional progress for flashing operations (0-100)
+  flashProgress?: number;
 }
 
 export interface SaveState {

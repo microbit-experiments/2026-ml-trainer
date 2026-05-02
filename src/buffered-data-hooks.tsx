@@ -22,6 +22,8 @@ import {
   startAudioStream,
   AudioXYZEvent,
 } from "./audio-input";
+import { useConnectActions } from "./connect-actions-hooks";
+import { startMicrobitAudioStreamFromUsbConnection } from "./microbit-audio-input";
 
 const BufferedDataContext = createContext<BufferedData | null>(null);
 
@@ -54,7 +56,7 @@ const useBufferedDataInternal = (enabled: boolean): BufferedData => {
   const [connectStatus] = useConnectStatus();
   const [{ microphoneUsed }] = useSettings();
   const microphonePermission = useStore((s) => s.microphonePermission);
-  //const connection = useConnectActions();
+  const connection = useConnectActions();
   const dataWindow = useStore((s) => s.dataWindow);
   const bufferRef = useRef<BufferedData>();
   const getBuffer = useCallback(() => {
@@ -80,15 +82,31 @@ const useBufferedDataInternal = (enabled: boolean): BufferedData => {
     };
 
     if (microphoneUsed === "device") {
-      // Start audio capture
       const cleanup = startAudioStream();
       addAudioListener(listener);
-
       return () => {
         cleanup();
         removeAudioListener(listener);
       };
     }
-  }, [connectStatus, enabled, getBuffer, microphoneUsed, microphonePermission]);
+
+    if (microphoneUsed === "microbit") {
+      const cleanup = startMicrobitAudioStreamFromUsbConnection(
+        connection.getUsbConnection()
+      );
+      addAudioListener(listener);
+      return () => {
+        cleanup();
+        removeAudioListener(listener);
+      };
+    }
+  }, [
+    connectStatus,
+    connection,
+    enabled,
+    getBuffer,
+    microphoneUsed,
+    microphonePermission,
+  ]);
   return getBuffer();
 };
