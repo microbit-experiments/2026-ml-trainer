@@ -22,3 +22,6 @@
 /ml4f-output/
 
 .github/
+/src/experiments-data/
+/benchmark-results-*.json
+/speech-commands-results-*.json
