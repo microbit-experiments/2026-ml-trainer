@@ -110,11 +110,11 @@ export class ConnectActions {
     }
   };
 
-  flashMicrobit = async (
+  flashMicrobit = (
     hex: string,
     progress: (progress: number) => void,
     temporaryUsbConnection?: MicrobitWebUSBConnection
-  ): Promise<ConnectResult> => {
+  ): ConnectResult => {
     void hex;
     void progress;
     void temporaryUsbConnection;

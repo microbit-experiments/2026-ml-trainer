@@ -74,7 +74,7 @@ const DownloadDialogs = () => {
         />
       );
     case DownloadStep.WebUsbFlashingTutorial: {
-      const handleDownloadProject = async () => {
+      const handleDownloadProject = () => {
         logging.event({
           type: "hex-download",
           detail: {
@@ -82,7 +82,6 @@ const DownloadDialogs = () => {
             samples: getTotalNumSamples(actions),
           },
         });
-        await downloadActions.connectAndFlashMicrobit(stage);
       };
 
       return (

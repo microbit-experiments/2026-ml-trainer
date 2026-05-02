@@ -192,7 +192,9 @@ export const startMicrobitAudioStream = async (
 
   const readLoop = async () => {
     while (active) {
-      const { value, done } = await reader.read();
+      const result: { value?: Uint8Array; done: boolean } = await reader.read();
+      const value = result.value;
+      const done = result.done;
       if (done || !value) {
         break;
       }

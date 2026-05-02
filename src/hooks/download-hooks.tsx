@@ -3,14 +3,9 @@
  *
  * SPDX-License-Identifier: MIT
  */
-import {
-  createWebUSBConnection,
-  ConnectionStatus as UsbConnectionStatus,
-} from "@microbit/microbit-connection";
 import { useMemo } from "react";
 import {
   ConnectActions,
-  ConnectResult,
   ConnectionAndFlashOptions,
 } from "../connect-actions";
 import { useConnectActions } from "../connect-actions-hooks";
@@ -52,7 +47,7 @@ export class DownloadProjectActions {
     this.setState({ ...this.state, usbDevice: undefined });
   };
 
-  start = async (download: HexData) => {
+  start = (download: HexData) => {
     downloadHex(download);
     this.setState({
       ...this.state,
@@ -95,7 +90,7 @@ export class DownloadProjectActions {
 
   onBackToIntro = () => this.setStep(DownloadStep.Help);
 
-  onChosenSameMicrobit = async () => {
+  onChosenSameMicrobit = () => {
     if (this.connectActions.isUsbDeviceConnected()) {
       const newStage = { ...this.state, microbitToFlash: MicrobitToFlash.Same };
       const usbConnection = this.connectActions.getUsbConnection();
@@ -123,7 +118,7 @@ export class DownloadProjectActions {
     });
   };
 
-  connectAndFlashMicrobit = async (stage: DownloadState) => {
+  connectAndFlashMicrobit = (stage: DownloadState) => {
     if (!stage.hex) {
       throw new Error("Project hex/name is not set!");
     }
@@ -135,7 +130,7 @@ export class DownloadProjectActions {
     });
   };
 
-  private flashMicrobit = async (
+  private flashMicrobit = (
     stage: DownloadState,
     connectionAndFlashOptions?: ConnectionAndFlashOptions
   ) => {
