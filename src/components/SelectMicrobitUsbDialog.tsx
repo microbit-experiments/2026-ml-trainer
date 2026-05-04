@@ -29,7 +29,7 @@ export const getHeadingId = (flowType: ConnectionFlowType) => {
     case ConnectionFlowType.ConnectBluetooth:
       return "connect-popup-usb-bluetooth-data-collection-title";
     case ConnectionFlowType.ConnectRadioRemote:
-      return "connect-popup-usb-radio-data-collection-title";
+      return "connect-popup-usb-title";
     case ConnectionFlowType.ConnectRadioBridge:
       return "connect-popup-usb-radio-link-title";
   }

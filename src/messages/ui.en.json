@@ -394,7 +394,7 @@
   "connect-cable-subtitle": [
     {
       "type": 0,
-      "value": "Connect the micro:bit to this computer with a USB cable so that the data collection program can be downloaded to it."
+      "value": "Connect your micro:bit to this computer with a USB cable to start collecting audio data."
     }
   ],
   "connect-computer": [
@@ -569,6 +569,12 @@
       "value": "Download radio link program to micro:bit 2"
     }
   ],
+  "connect-popup-usb-title": [
+    {
+      "type": 0,
+      "value": "Connect your data collection micro:bit"
+    }
+  ],
   "connect-popup-webusb-instruction2": [
     {
       "type": 0,
@@ -635,6 +641,19 @@
       "value": "Connect using Web Bluetooth instead"
     }
   ],
+  "connect-start-heading": [
+    {
+      "type": 0,
+      "value": "What you need to connect to your micro:bit"
+    }
+  ],
+  "connect-start-requirements1": [
+    {
+      "type": 0,
+      "value": "micro:bit"
+    }
+  ],
+  
   "connect-to-record": [
     {
       "type": 0,

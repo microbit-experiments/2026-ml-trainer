@@ -63,11 +63,6 @@ const ConnectionDialogs = () => {
               : "radio"
           }
           {...dialogCommonProps}
-          onLinkClick={
-            stage.isWebBluetoothSupported && stage.isWebUsbSupported
-              ? actions.switchFlowType
-              : undefined
-          }
           onNextClick={actions.onNextClick}
           reconnect={stage.flowStep === ConnectionFlowStep.ReconnectFailedTwice}
         />

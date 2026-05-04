@@ -175,16 +175,6 @@ const LiveGraphPanel = ({
                   isDisabled={microphoneDisabled}
                 />
               </HStack>
-              {isConnected && microphoneUsed === "microbit" && (
-                <Button
-                  backgroundColor="white"
-                  variant="secondary"
-                  size="xs"
-                  onClick={handleDisconnect}
-                >
-                  <FormattedMessage id="disconnect-action" />
-                </Button>
-              )}
               {isReconnecting && (
                 <Text bg="white" fontWeight="bold">
                   <FormattedMessage id="reconnecting" />

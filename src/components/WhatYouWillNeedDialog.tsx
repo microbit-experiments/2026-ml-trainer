@@ -3,11 +3,10 @@
  *
  * SPDX-License-Identifier: MIT
  */
-import { Button, Grid, GridItem, Image, Text, VStack } from "@chakra-ui/react";
+import { Grid, GridItem, Image, Text, VStack } from "@chakra-ui/react";
 import { FormattedMessage } from "react-intl";
 import batteryPackImage from "../images/stylised-battery-pack.svg";
 import microbitImage from "../images/stylised-microbit-black.svg";
-import twoMicrobitsImage from "../images/stylised-two-microbits-black.svg";
 import usbCableImage from "../images/stylised-usb-cable.svg";
 import computerImage from "../images/stylised_computer.svg";
 import computerBluetoothImage from "../images/stylised_computer_w_bluetooth.svg";
@@ -20,9 +19,8 @@ import { useDeployment } from "../deployment";
 const itemsConfig = {
   radio: [
     {
-      imgSrc: twoMicrobitsImage,
-      titleId: "connect-radio-start-requirements1",
-      subtitleId: "connect-radio-start-requirements1-subtitle",
+      imgSrc: microbitImage,
+      titleId: "connect-start-requirements1",
     },
     {
       imgSrc: computerImage,
@@ -68,13 +66,11 @@ export interface WhatYouWillNeedDialogProps
   > {
   reconnect: boolean;
   type: "radio" | "bluetooth";
-  onLinkClick: (() => void) | undefined;
 }
 
 const WhatYouWillNeedDialog = ({
   reconnect,
   type,
-  onLinkClick,
   ...props
 }: WhatYouWillNeedDialogProps) => {
   const { supportLinks } = useDeployment();
@@ -82,21 +78,10 @@ const WhatYouWillNeedDialog = ({
     <ConnectContainerDialog
       {...props}
       headingId={
-        reconnect
-          ? `reconnect-failed-${type}-heading`
-          : `connect-${type}-start-heading`
+        reconnect ? `reconnect-failed-${type}-heading` : `connect-start-heading`
       }
       footerLeft={
         <VStack alignItems="start">
-          {onLinkClick && (
-            <Button onClick={onLinkClick} variant="link" size="lg">
-              <FormattedMessage
-                id={`connect-${type}-start-switch-${
-                  type === "bluetooth" ? "radio" : "bluetooth"
-                }`}
-              />
-            </Button>
-          )}
           {reconnect && (
             <ExternalLink
               href={supportLinks.troubleshooting}

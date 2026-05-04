@@ -34,12 +34,11 @@ export const getConnectionCableDialogConfig = (
       };
     case ConnectionFlowType.ConnectRadioRemote:
       return {
-        headingId: "connect-data-collection-heading",
-        subtitleId: "connect-data-collection-subtitle",
+        headingId: "connect-cable-heading",
+        subtitleId: "connect-cable-subtitle",
         ...(isLocalStage()
           ? {
-              linkTextId: "connect-cable-skip",
-              linkType: "skip",
+              linkType: "none",
             }
           : {}),
       };
