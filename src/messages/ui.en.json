@@ -1969,7 +1969,7 @@
   "live-graph-tooltip": [
     {
       "type": 0,
-      "value": "This graph shows audio data from the micro:bit's microphone in real time. Try moving your data collection micro:bit to see the X, Y and Z axes change. Each coloured line represents a different direction (dimension) you are moving the micro:bit in."
+      "value": "This graph shows audio data from the micro:bit's microphone in real time. Try moving your data collection micro:bit to see the X, Y and Z axes change. Each coloured line represents a different feature of the sound the micro:bit is capturing."
     }
   ],
   "live-graph-tooltip-aria": [
