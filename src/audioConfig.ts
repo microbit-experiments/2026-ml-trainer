@@ -12,11 +12,11 @@ export const AUDIO_DEVICE_SAMPLE_PERIOD_MS = Math.round(
 
 // ---- Band-split cutoffs -------------------------------------------------
 
-export const AUDIO_LOW_CUTOFF = 400; // Hz — low/mid band boundary (3-band path)
-export const AUDIO_HIGH_CUTOFF = 1500; // Hz — mid/high band boundary (3-band path)
+export const AUDIO_LOW_CUTOFF = 300; // Hz — low/mid band boundary (3-band path)
+export const AUDIO_HIGH_CUTOFF = 550; // Hz — mid/high band boundary (3-band path)
 
 // N cutoffs → N+1 bands: [0,c0], [c0,c1], ..., [c(n-1), Nyquist]
-export const AUDIO_BAND_CUTOFFS: number[] = [400, 800, 1500, 2500];
+export const AUDIO_BAND_CUTOFFS: number[] = [300, 550, 750];
 
 // ---- Loudness normalisation ---------------------------------------------
 

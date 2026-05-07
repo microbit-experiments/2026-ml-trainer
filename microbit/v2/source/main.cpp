@@ -10,8 +10,8 @@
 
 namespace {
 
-constexpr int STREAM_SAMPLE_RATE = 1000;
-constexpr int SAMPLES_PER_FRAME = 20; // 20 ms chunks at 1 kHz
+constexpr int STREAM_SAMPLE_RATE = 1500;
+constexpr int SAMPLES_PER_FRAME = 30; // 20 ms chunks at 1.5 kHz
 constexpr int SAMPLE_PERIOD_US = 1000000 / STREAM_SAMPLE_RATE;
 constexpr int MIC_HEALTH_CHECK_INTERVAL_FRAMES = 50;
 
@@ -71,10 +71,8 @@ int main()
         int pos = std::snprintf(
             frame,
             sizeof(frame),
-            "MBAUDIO,1,%d,%u,%d",
-            STREAM_SAMPLE_RATE,
-            sequence++,
-            SAMPLES_PER_FRAME
+            "MBA,%u",
+            sequence++
         );
 
         if (pos < 0 || pos >= static_cast<int>(sizeof(frame)))

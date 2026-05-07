@@ -16,12 +16,13 @@ type NavigatorWithSerial = {
   };
 };
 
-const SAMPLE_RATE_FALLBACK = 8000;
+const MICROBIT_SAMPLE_RATE = 1500;
+const MICROBIT_SAMPLES_PER_FRAME = 30;
 const DURATION_MS = 990;
 const ANALYSIS_INTERVAL_MS = 20;
 const DEBUG_SAMPLE_INTERVALS = 1000 / ANALYSIS_INTERVAL_MS;
 
-const FRAME_PREFIX = "MBAUDIO";
+const FRAME_PREFIX = "MBA";
 const DEBUG_AUDIO_STREAM = true;
 
 const debugAudio = (...args: unknown[]) => {
@@ -41,7 +42,6 @@ export interface AudioXYZEvent {
 }
 
 interface ParsedFrame {
-  sampleRate: number;
   samples: number[];
 }
 
@@ -124,28 +124,22 @@ const parseFrames = (
     }
 
     const parts = trimmed.split(",");
-    if (parts.length < 5 || parts[0] !== FRAME_PREFIX) {
-      continue;
-    }
-
-    const version = Number(parts[1]);
-    const sampleRate = Number(parts[2]);
-    const sampleCount = Number(parts[4]);
     if (
-      !Number.isFinite(version) ||
-      !Number.isFinite(sampleRate) ||
-      !Number.isFinite(sampleCount) ||
-      version !== 1 ||
-      sampleCount <= 0 ||
-      parts.length < 5 + sampleCount
+      parts.length < 2 + MICROBIT_SAMPLES_PER_FRAME ||
+      parts[0] !== FRAME_PREFIX
     ) {
       continue;
     }
 
-    const samples = new Array<number>(sampleCount);
+    const sequence = Number(parts[1]);
+    if (!Number.isFinite(sequence)) {
+      continue;
+    }
+
+    const samples = new Array<number>(MICROBIT_SAMPLES_PER_FRAME);
     let isValid = true;
-    for (let i = 0; i < sampleCount; i++) {
-      const value = Number(parts[5 + i]);
+    for (let i = 0; i < MICROBIT_SAMPLES_PER_FRAME; i++) {
+      const value = Number(parts[2 + i]);
       if (!Number.isFinite(value)) {
         isValid = false;
         break;
@@ -157,7 +151,6 @@ const parseFrames = (
     }
 
     frames.push({
-      sampleRate: sampleRate || SAMPLE_RATE_FALLBACK,
       samples,
     });
   }
@@ -183,7 +176,6 @@ export const startMicrobitAudioStream = async (
 
   let active = true;
   let pending = "";
-  let sampleRate = SAMPLE_RATE_FALLBACK;
   const ringBuffer: number[] = [];
   let debugTick = 0;
   let receivedBytes = 0;
@@ -208,11 +200,10 @@ export const startMicrobitAudioStream = async (
       pending = parsed.remaining;
 
       for (const frame of parsed.frames) {
-        sampleRate = frame.sampleRate;
         ringBuffer.push(...frame.samples);
       }
 
-      const maxLen = Math.floor((sampleRate * DURATION_MS) / 1000);
+      const maxLen = Math.floor((MICROBIT_SAMPLE_RATE * DURATION_MS) / 1000);
       while (ringBuffer.length > maxLen * 2) {
         ringBuffer.shift();
       }
@@ -225,11 +216,11 @@ export const startMicrobitAudioStream = async (
     }
 
     debugTick += 1;
-    const maxLen = Math.floor((sampleRate * DURATION_MS) / 1000);
+    const maxLen = Math.floor((MICROBIT_SAMPLE_RATE * DURATION_MS) / 1000);
     if (ringBuffer.length < maxLen) {
       if (debugTick % DEBUG_SAMPLE_INTERVALS === 0) {
         debugSnapshot("waiting for audio data", {
-          sampleRate,
+          sampleRate: MICROBIT_SAMPLE_RATE,
           pendingBytes: pending.length,
           ringBufferLength: ringBuffer.length,
           receivedChunks,
@@ -241,12 +232,12 @@ export const startMicrobitAudioStream = async (
     }
 
     const samples = ringBuffer.slice(-maxLen);
-    const xyz = splitAudioToXYZ(samples, sampleRate);
+    const xyz = splitAudioToXYZ(samples, MICROBIT_SAMPLE_RATE);
     const last = xyz.x.length - 1;
     if (last >= 0) {
       if (debugTick % DEBUG_SAMPLE_INTERVALS === 0) {
         debugSnapshot("audio sample snapshot", {
-          sampleRate,
+          sampleRate: MICROBIT_SAMPLE_RATE,
           ringBufferLength: ringBuffer.length,
           sampleCount: samples.length,
           xyz: {
@@ -281,7 +272,6 @@ export const startMicrobitAudioStreamFromUsbConnection = (
 ): (() => void) => {
   let active = true;
   let pending = "";
-  let sampleRate = SAMPLE_RATE_FALLBACK;
   const ringBuffer: number[] = [];
   let debugTick = 0;
   let receivedBytes = 0;
@@ -303,11 +293,10 @@ export const startMicrobitAudioStreamFromUsbConnection = (
     pending = parsed.remaining;
 
     for (const frame of parsed.frames) {
-      sampleRate = frame.sampleRate;
       ringBuffer.push(...frame.samples);
     }
 
-    const maxLen = Math.floor((sampleRate * DURATION_MS) / 1000);
+    const maxLen = Math.floor((MICROBIT_SAMPLE_RATE * DURATION_MS) / 1000);
     while (ringBuffer.length > maxLen * 2) {
       ringBuffer.shift();
     }
@@ -319,11 +308,11 @@ export const startMicrobitAudioStreamFromUsbConnection = (
     }
 
     debugTick += 1;
-    const maxLen = Math.floor((sampleRate * DURATION_MS) / 1000);
+    const maxLen = Math.floor((MICROBIT_SAMPLE_RATE * DURATION_MS) / 1000);
     if (ringBuffer.length < maxLen) {
       if (debugTick % DEBUG_SAMPLE_INTERVALS === 0) {
         debugSnapshot("waiting for USB audio data", {
-          sampleRate,
+          sampleRate: MICROBIT_SAMPLE_RATE,
           pendingBytes: pending.length,
           ringBufferLength: ringBuffer.length,
           receivedChunks,
@@ -335,12 +324,12 @@ export const startMicrobitAudioStreamFromUsbConnection = (
     }
 
     const samples = ringBuffer.slice(-maxLen);
-    const xyz = splitAudioToXYZ(samples, sampleRate);
+    const xyz = splitAudioToXYZ(samples, MICROBIT_SAMPLE_RATE);
     const last = xyz.x.length - 1;
     if (last >= 0) {
       if (debugTick % DEBUG_SAMPLE_INTERVALS === 0) {
         debugSnapshot("USB audio sample snapshot", {
-          sampleRate,
+          sampleRate: MICROBIT_SAMPLE_RATE,
           ringBufferLength: ringBuffer.length,
           sampleCount: samples.length,
           xyz: {
